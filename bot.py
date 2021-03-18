@@ -44,6 +44,7 @@ class HeidiClient(discord.Client):
         self.matchers["gib Bild von .+$"] = self.show_model_picture
         self.matchers["Countdown$"] = self.countdown
         self.matchers["gib Link"] = self.show_link
+        self.matchers["welche Farbe .+\\?$"] = self.random_color
 
     ### Helpers ------------------------------------------------------------------------------------
 
@@ -146,12 +147,11 @@ class HeidiClient(discord.Client):
         ]
         await message.channel.send(random.choice(choices))
 
+    # TODO: Accept multi-word inputs: "Heidi, wähle: Ipp ist dumm, ich bin dumm"
     async def choose(self, message):
         """
         wähle: <Option 1>, <Option 2>, ... (Ich treffe eine Wahl)
         """
-
-        print("Choose")
 
         choices = message.content.replace(",", "").split()[2:]
         await message.channel.send(random.choice(choices))
@@ -173,12 +173,19 @@ class HeidiClient(discord.Client):
 
     async def show_link(self, message):
         """
-        gib Link
+        gib Link (Link zum Stream)
         """
         link_pro7 = "https://www.prosieben.de/tv/germanys-next-topmodel/livestream"
         link_joyn = "https://www.joyn.de/serien/germanys-next-topmodel"
 
         await message.channel.send(f"ProSieben: {link_pro7}\nJoyn: {link_joyn}")
+
+    async def random_color(self, message):
+        """
+        welche Farbe ... <Ding>? (Zufällige Farbe)
+        """
+        choices = ["Rot", "Grün", "Gelb", "Blau", "Lila", "Pink", "Türkis", "Schwarz", "Weiß", "Grau", "Gelb", "Orange", "Olivegrün", "Mitternachtsblau", "Braun", "Tobe"]
+        await message.channel.send(random.choice(choices))
 
     ### Automatic Actions --------------------------------------------------------------------------
 
