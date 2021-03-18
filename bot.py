@@ -3,13 +3,12 @@
 import os
 import re
 import random
-from functools import reduce
+import datetime
 
 from dotenv import load_dotenv
 
 import discord
 from discord import Intents
-from discord.ext import commands
 
 from scraper import Girls
 
@@ -19,27 +18,32 @@ GUILD = os.getenv("DISCORD_GUILD")  # Zocken mit Heidi
 
 
 class HeidiClient(discord.Client):
-
     def __init__(self):
-        super().__init__(intents=Intents.default(), status="Nur eine kann Germany's next Topmodel werden!")
+        super().__init__(
+            intents=Intents.default(),
+            status="Nur eine kann Germany's next Topmodel werden!",
+        )
 
         self.prefix = "Heidi, "
         self.prefix_regex = "^" + self.prefix
 
-        self.girls = Girls() # scraped model list
+        self.girls = Girls()  # scraped model list
 
-        self.triggers = {} # automatic actions
-        self.triggers[lambda m: m.author.nick in self.girls.get_in_names()] = self.autoreact_to_girls
+        self.triggers = {}  # automatic actions
+        self.triggers[
+            lambda m: m.author.nick.lower() in self.girls.get_in_names()
+        ] = self.autoreact_to_girls
 
-        self.matchers = {} # react to messages
+        self.matchers = {}  # react to messages
         self.matchers["Hilfe$"] = self.show_help
         self.matchers["Heidi!$"] = self.say_name
         self.matchers["wer ist dabei\\?$"] = self.list_models_in
         self.matchers["wer ist raus\\?$"] = self.list_models_out
         self.matchers[".+, ja oder nein\\?$"] = self.magic_shell
-        self.matchers["wähle: (.+,)+"] = self.choose
-        self.matchers["gib Bild von .+"] = self.show_model_picture
-
+        self.matchers["wähle: (.+,?)+$"] = self.choose
+        self.matchers["gib Bild von .+$"] = self.show_model_picture
+        self.matchers["Countdown$"] = self.countdown
+        self.matchers["gib Link"] = self.show_link
 
     ### Helpers ------------------------------------------------------------------------------------
 
@@ -47,10 +51,14 @@ class HeidiClient(discord.Client):
         """
         Generate help-string from docstrings of matchers and triggers
         """
-        docstrings_triggers = ["  - " + func.__doc__.strip() for func in self.triggers.values()]
-        docstrings_matchers = ["  - " + func.__doc__.strip() for func in self.matchers.values()]
+        docstrings_triggers = [
+            "  - " + func.__doc__.strip() for func in self.triggers.values()
+        ]
+        docstrings_matchers = [
+            "  - " + func.__doc__.strip() for func in self.matchers.values()
+        ]
 
-        response = "Präfix: \"" + self.prefix + "\" (mit Leerzeichen)\n"
+        response = 'Präfix: "' + self.prefix + '" (mit Leerzeichen)\n'
         response += "--------------------------------------------------\n"
 
         response += "Das mache ich automatisch:\n"
@@ -61,36 +69,30 @@ class HeidiClient(discord.Client):
 
         return response
 
-
     def _match(self, matcher, message):
         """
         Check if a string matches against prefix + matcher (case-insensitive)
         """
         return re.match(self.prefix_regex + matcher, message.content, re.IGNORECASE)
 
-
     ### Events -------------------------------------------------------------------------------------
 
     async def on_ready(self):
         print(f"{self.user} (id: {self.user.id}) has connected to Discord!")
 
-
     async def on_message(self, message):
         if message.author == client.user:
             return
-
 
         for trigger in self.triggers:
             if trigger(message):
                 await self.triggers[trigger](message)
                 break
 
-
         for matcher in self.matchers:
             if self._match(matcher, message):
                 await self.matchers[matcher](message)
                 break
-
 
     ### Commands -----------------------------------------------------------------------------------
 
@@ -100,13 +102,11 @@ class HeidiClient(discord.Client):
         """
         await message.channel.send(self._help_text())
 
-
     async def say_name(self, message):
         """
         Heidi! (Ich sag meinen Namen)
         """
         await message.channel.send("HEIDI!")
-
 
     async def list_models_in(self, message):
         """
@@ -114,13 +114,11 @@ class HeidiClient(discord.Client):
         """
         await message.channel.send("\n".join(self.girls.get_in_names()))
 
-
     async def list_models_out(self, message):
         """
         wer ist raus? (Liste der Keks welche ich ge*ickt hab)
         """
         await message.channel.send("\n".join(self.girls.get_out_names()))
-
 
     async def show_model_picture(self, message):
         """
@@ -132,22 +130,55 @@ class HeidiClient(discord.Client):
         picture.set_footer(text=name)
         await message.channel.send(embed=picture)
 
-
     async def magic_shell(self, message):
         """
         <Frage>, ja oder nein? (Ich beantworte dir eine Frage)
         """
-        choices = ["Ja!", "Jo.", "Total!", "Natürlich.", "Nein!", "Nö.", "Nä.", "Niemals!"]
+        choices = [
+            "Ja!",
+            "Jo.",
+            "Total!",
+            "Natürlich.",
+            "Nein!",
+            "Nö.",
+            "Nä.",
+            "Niemals!",
+        ]
         await message.channel.send(random.choice(choices))
-
 
     async def choose(self, message):
         """
         wähle: <Option 1>, <Option 2>, ... (Ich treffe eine Wahl)
         """
+
+        print("Choose")
+
         choices = message.content.replace(",", "").split()[2:]
         await message.channel.send(random.choice(choices))
 
+    async def countdown(self, message):
+        """
+        Countdown (Zeit bis zur nächsten Folge)
+        """
+        date = datetime.date.today()
+        while date.weekday() != 3: # 3 for thursday
+            date += datetime.timedelta(1)
+        next_gntm = datetime.datetime(date.year, date.month, date.day, 20, 15)
+
+        delta = next_gntm - datetime.datetime.now()
+        hours, rem = divmod(delta.seconds, 3600)
+        minutes, seconds = divmod(rem, 60)
+
+        await message.channel.send(f"Noch {delta.days} Tage, {hours} Stunden und {minutes} Minuten bis zur nächsten Folge GNTM!")
+
+    async def show_link(self, message):
+        """
+        gib Link
+        """
+        link_pro7 = "https://www.prosieben.de/tv/germanys-next-topmodel/livestream"
+        link_joyn = "https://www.joyn.de/serien/germanys-next-topmodel"
+
+        await message.channel.send(f"ProSieben: {link_pro7}\nJoyn: {link_joyn}")
 
     ### Automatic Actions --------------------------------------------------------------------------
 
