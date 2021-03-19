@@ -4,6 +4,7 @@ import os
 import re
 import random
 import datetime
+import asyncio
 
 from dotenv import load_dotenv
 
@@ -45,6 +46,10 @@ class HeidiClient(discord.Client):
         self.matchers["Countdown$"] = self.countdown
         self.matchers["gib Link"] = self.show_link
         self.matchers["welche Farbe .+\\?$"] = self.random_color
+
+        ### Voicelines
+
+        self.matchers["sag kein Foto$"] = self.say_kein_foto
 
     ### Helpers ------------------------------------------------------------------------------------
 
@@ -186,6 +191,26 @@ class HeidiClient(discord.Client):
         """
         choices = ["Rot", "Grün", "Gelb", "Blau", "Lila", "Pink", "Türkis", "Schwarz", "Weiß", "Grau", "Gelb", "Orange", "Olivegrün", "Mitternachtsblau", "Braun", "Tobe"]
         await message.channel.send(random.choice(choices))
+
+    ### Voiceboard ---------------------------------------------------------------------------------
+
+    async def say_kein_foto(self, message):
+        """
+        sag kein Foto ("Ich habe heute leider kein Foto für dich")
+        """
+        voice_channel = message.author.voice.channel
+
+        if voice_channel == None:
+            return
+
+        voice_client = await voice_channel.connect()
+        audio_source = discord.FFmpegPCMAudio("sounds/kein_foto.mp3")
+        voice_client.play(audio_source)
+
+        while voice_client.is_playing():
+            asyncio.sleep(1)
+
+        await voice_client.disconnect()
 
     ### Automatic Actions --------------------------------------------------------------------------
 
