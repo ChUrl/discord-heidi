@@ -50,6 +50,7 @@ class HeidiClient(discord.Client):
         ### Voicelines
 
         self.matchers["sag kein Foto$"] = self.say_kein_foto
+        self.matchers["sag Opfer"] = self.say_opfer
 
     ### Helpers ------------------------------------------------------------------------------------
 
@@ -208,7 +209,25 @@ class HeidiClient(discord.Client):
         voice_client.play(audio_source)
 
         while voice_client.is_playing():
-            asyncio.sleep(1)
+            await asyncio.sleep(1)
+
+        await voice_client.disconnect()
+
+    async def say_opfer(self, message):
+        """
+        sag Opfer ("Opfer")
+        """
+        voice_channel = message.author.voice.channel
+
+        if voice_channel == None:
+            return
+
+        voice_client = await voice_channel.connect()
+        audio_source = discord.FFmpegPCMAudio("sounds/opfer.mp3")
+        voice_client.play(audio_source)
+
+        while voice_client.is_playing():
+            await asyncio.sleep(1)
 
         await voice_client.disconnect()
 
