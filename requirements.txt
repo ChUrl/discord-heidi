@@ -1,5 +1,5 @@
 python-dotenv
 rich
-discordpy
+discord.py
 beautifulsoup4
 selenium
