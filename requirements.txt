@@ -1,0 +1,5 @@
+python-dotenv
+rich
+discordpy
+beautifulsoup4
+selenium
