@@ -26,7 +26,7 @@ class Girls():
 
         self.girls_in = {girl.find("h4", class_="candidate-title").text.lower(): girl for girl in girls_in}
         self.girls_out = {girl.find("h4", class_="candidate-title").text.lower(): girl for girl in girls_out}
-        self.girls = self.girls_in | self.girls_out
+        self.girls = {**self.girls_in, **self.girls_out}
 
 
     def get_in_names(self):
