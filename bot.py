@@ -49,7 +49,7 @@ class HeidiClient(discord.Client):
         self.matchers["Countdown$"] = self.countdown
         self.matchers["gib Link"] = self.show_link
         self.matchers["welche Farbe .+\\?$"] = self.random_color
-        self.matchers["Bibelzitat"] = self.generate_bible_quote
+        self.matchers["Bibelfake"] = self.generate_bible_quote
 
         ### Voicelines
 
@@ -218,7 +218,7 @@ class HeidiClient(discord.Client):
 
     async def generate_bible_quote(self, message):
         """
-        Bibelzitat! (Unsinn generieren)
+        Bibelfake! (Unsinn generieren)
         """
         quote = self.bible.generate_sentence()
         await message.channel.send(" ".join(quote))
