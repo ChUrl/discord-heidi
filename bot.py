@@ -37,6 +37,9 @@ class HeidiClient(discord.Client):
         self.triggers[
             lambda m: m.author.nick.lower() in self.girls.get_in_names()
         ] = self.autoreact_to_girls
+        self.triggers[
+            lambda m: "jeremy" in m.author.nick.lower()
+        ] = self.autoreact_to_jeremy
 
         self.matchers = {}  # react to messages
         self.matchers["Hilfe$"] = self.show_help
@@ -268,6 +271,13 @@ class HeidiClient(discord.Client):
         Ich ❤-e Nachrichten einer aktiven GNTM Teilnehmerin
         """
         await message.add_reaction("❤")
+
+
+    async def autoreact_to_jeremy(self, message):
+        """
+        Ich ❤-e Nachrichten von Jeremy
+        """
+        await message.add_reaction("🧀")
 
 
 client = HeidiClient()
