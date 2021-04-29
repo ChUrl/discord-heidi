@@ -9,9 +9,11 @@ import asyncio
 from dotenv import load_dotenv
 
 import discord
+
 # from discord import Intents
 
 from scraper import Girls
+from textgen import TextGen
 
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
@@ -29,6 +31,7 @@ class HeidiClient(discord.Client):
         self.prefix_regex = "^" + self.prefix
 
         self.girls = Girls()  # scraped model list
+        self.bible = TextGen("bible.txt", 3)
 
         self.triggers = {}  # automatic actions
         self.triggers[
@@ -46,6 +49,7 @@ class HeidiClient(discord.Client):
         self.matchers["Countdown$"] = self.countdown
         self.matchers["gib Link"] = self.show_link
         self.matchers["welche Farbe .+\\?$"] = self.random_color
+        self.matchers["zitiere die Bibel"] = self.generate_bible_quote
 
         ### Voicelines
 
@@ -167,7 +171,7 @@ class HeidiClient(discord.Client):
         Countdown (Zeit bis zur nächsten Folge)
         """
         date = datetime.date.today()
-        while date.weekday() != 3: # 3 for thursday
+        while date.weekday() != 3:  # 3 for thursday
             date += datetime.timedelta(1)
         next_gntm = datetime.datetime(date.year, date.month, date.day, 20, 15)
 
@@ -175,7 +179,9 @@ class HeidiClient(discord.Client):
         hours, rem = divmod(delta.seconds, 3600)
         minutes, seconds = divmod(rem, 60)
 
-        await message.channel.send(f"Noch {delta.days} Tage, {hours} Stunden und {minutes} Minuten bis zur nächsten Folge GNTM!")
+        await message.channel.send(
+            f"Noch {delta.days} Tage, {hours} Stunden und {minutes} Minuten bis zur nächsten Folge GNTM!"
+        )
 
     async def show_link(self, message):
         """
@@ -190,8 +196,32 @@ class HeidiClient(discord.Client):
         """
         welche Farbe ... <Ding>? (Zufällige Farbe)
         """
-        choices = ["Rot", "Grün", "Gelb", "Blau", "Lila", "Pink", "Türkis", "Schwarz", "Weiß", "Grau", "Gelb", "Orange", "Olivegrün", "Mitternachtsblau", "Braun", "Tobe"]
+        choices = [
+            "Rot",
+            "Grün",
+            "Gelb",
+            "Blau",
+            "Lila",
+            "Pink",
+            "Türkis",
+            "Schwarz",
+            "Weiß",
+            "Grau",
+            "Gelb",
+            "Orange",
+            "Olivegrün",
+            "Mitternachtsblau",
+            "Braun",
+            "Tobe",
+        ]
         await message.channel.send(random.choice(choices))
+
+    async def generate_bible_quote(self, message):
+        """
+        zitiere die Bibel! (Unsinn generieren)
+        """
+        quote = self.bible.generate_sentence()
+        await message.channel.send(" ".join(quote))
 
     ### Voiceboard ---------------------------------------------------------------------------------
 

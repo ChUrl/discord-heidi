@@ -2,13 +2,28 @@
 
 with pkgs;
 
-let myPython = python38.buildEnv.override {
-      extraLibs = with python38Packages; [
-        python-dotenv
+let myPython = python39.buildEnv.override {
+      extraLibs = with python39Packages; [
+        # Common Libs
         rich
-        discordpy
-        beautifulsoup4
-        selenium
+        # numpy
+        # matplotlib
+        # scipy
+        # torch
+        
+        # Doom Emacs Libs
+        black
+        pyflakes
+        isort
+        nose
+        pytest
+
+        # For Discord-Bot
+        python-dotenv # Env
+        discordpy # Discord
+        beautifulsoup4 # Scraping
+        selenium # Scraping
+        pynacl # Voice
       ];
     };
 in
@@ -16,7 +31,11 @@ in
 mkShell {
   buildInputs = [
     myPython
-    nodePackages.pyright
-    geckodriver
+    nodePackages.pyright # LSP
+    pipenv # Doom
+
+    firefox # Selenium
+    geckodriver # Selenium
+    ffmpeg # Voice
   ];
 }
