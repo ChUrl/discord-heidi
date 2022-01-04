@@ -3,3 +3,4 @@
 /geckodriver.log
 /test.txt
 *.txt
+Pipfile.lock
