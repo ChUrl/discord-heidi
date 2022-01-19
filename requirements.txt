@@ -1,2 +1,6 @@
-python-dotenv
-discord.py
+# discord.py # not maintained
+py-cord # maintained fork of discord.py
+python-dotenv # discord guild secrets
+beautifulsoup4 # html parsing
+requests # request web page
+pynacl # voice support
