@@ -4,6 +4,7 @@ import os
 import re
 import random
 import asyncio
+from functools import reduce
 
 from dotenv import load_dotenv
 from models import Models
@@ -12,15 +13,13 @@ import discord
 
 # used to start the bot locally, for docker the variables have to be set when the container is run
 load_dotenv()
-
 TOKEN = os.getenv("DISCORD_TOKEN")
-GUILD = os.getenv("DISCORD_GUILD")  # Zocken mit Heidi
 
 
 class HeidiClient(discord.Client):
     def __init__(self):
         super().__init__(
-            status="Nur eine kann Germany's next Topmodel werden!",
+            status="Nur eine kann GNTM werden!",
         )
 
         self.prefix = "Heidi, "
@@ -31,10 +30,9 @@ class HeidiClient(discord.Client):
         # automatic actions
         self.triggers = {
             lambda m: m.author.nick.lower() in self.models.get_in_names(): self.autoreact_to_girls,
-            lambda m: "jeremy" in m.author.nick.lower(): self.autoreact_to_jeremy
-        }
+            lambda m: "jeremy" in m.author.nick.lower(): self.autoreact_to_jeremy}
 
-        # react to messages
+        # commands
         self.matchers = {"Hilfe$": self.show_help,
                          "Heidi!$": self.say_name,
 
@@ -42,17 +40,14 @@ class HeidiClient(discord.Client):
                          "wer ist dabei\\?$": self.list_models_in,
                          "wer ist raus\\?$": self.list_models_out,
                          "gib Bild von .+$": self.show_model_picture,
-                         "gib Link": self.show_link,
+                         "gib Link$": self.show_link,
 
                          # Fun stuff
-                         "welche Farbe .+\\?$": self.random_color,
-                         ".+, ja oder nein\\?$": self.magic_shell,
+                         "welche Farbe .+\\?": self.random_color,
+                         ".+, ja oder nein\\?": self.magic_shell,
                          "wähle: (.+,?)+$": self.choose,
-
-                         # Voicelines
-                         "sag kein Foto$": self.say_kein_foto,
-                         "sag Opfer": self.say_opfer
-        }
+                         "sprechen": self.list_voicelines,
+                         "sag .+$": self.say_voiceline}
 
     # Helpers ------------------------------------------------------------------------------------
 
@@ -70,10 +65,10 @@ class HeidiClient(discord.Client):
         response = 'Präfix: "' + self.prefix + '" (mit Leerzeichen)\n'
         response += "--------------------------------------------------\n"
 
-        response += "Das mache ich automatisch:\n"
+        response += "Automatisch:\n"
         response += "\n".join(docstrings_triggers)
 
-        response += "\n\nIch höre auf diese Befehle:\n"
+        response += "\n\nCommands:\n"
         response += "\n".join(docstrings_matchers)
 
         return response
@@ -107,31 +102,32 @@ class HeidiClient(discord.Client):
 
     async def show_help(self, message):
         """
-        Hilfe (Ich höre auf diese Befehle, Senpai UwU)
+        Hilfe (Senpai UwU)
         """
         await message.channel.send(self._help_text())
 
-    async def say_name(self, message):
+    @staticmethod
+    async def say_name(message):
         """
-        Heidi! (Ich sag meinen Namen)
+        Heidi!
         """
         await message.channel.send("HEIDI!")
 
     async def list_models_in(self, message):
         """
-        wer ist dabei? (Liste der Models welche noch GNTM werden können)
+        wer ist dabei?
         """
         await message.channel.send("\n".join(self.models.get_in_names()))
 
     async def list_models_out(self, message):
         """
-        wer ist raus? (Liste der Keks welche ich ge*ickt hab)
+        wer ist raus? (Liste der Keks welche ge*ickt wurden)
         """
         await message.channel.send("\n".join(self.models.get_out_names()))
 
     async def show_model_picture(self, message):
         """
-        gib Bild von <Name> (Zeigt ein Bild des entsprechenden Models)
+        gib Bild von <Name>
         """
         name = message.content.split()[-1]
         picture = discord.Embed()
@@ -139,9 +135,10 @@ class HeidiClient(discord.Client):
         picture.set_footer(text=name)
         await message.channel.send(embed=picture)
 
-    async def magic_shell(self, message):
+    @staticmethod
+    async def magic_shell(message):
         """
-        <Frage>, ja oder nein? (Ich beantworte dir eine Frage)
+        <Frage>, ja oder nein?
         """
         choices = [
             "Ja!",
@@ -156,24 +153,27 @@ class HeidiClient(discord.Client):
         await message.channel.send(random.choice(choices))
 
     # TODO: Accept multi-word inputs: "Heidi, wähle: Ipp ist dumm, ich bin dumm"
-    async def choose(self, message):
+    @staticmethod
+    async def choose(message):
         """
-        wähle: <Option 1>, <Option 2>, ... (Ich treffe eine Wahl)
+        wähle: <Option 1>, <Option 2>, ...
         """
 
         choices = message.content.replace(",", "").split()[2:]
         await message.channel.send(random.choice(choices))
 
-    async def show_link(self, message):
+    @staticmethod
+    async def show_link(message):
         """
-        gib Link (Link zum Stream)
+        gib Link
         """
         link_pro7 = "https://www.prosieben.de/tv/germanys-next-topmodel/livestream"
         link_joyn = "https://www.joyn.de/serien/germanys-next-topmodel"
 
         await message.channel.send(f"ProSieben: {link_pro7}\nJoyn: {link_joyn}")
 
-    async def random_color(self, message):
+    @staticmethod
+    async def random_color(message):
         """
         welche Farbe ... <Ding>? (Zufällige Farbe)
         """
@@ -199,35 +199,28 @@ class HeidiClient(discord.Client):
 
     # Voiceboard ---------------------------------------------------------------------------------
 
-    async def say_kein_foto(self, message):
+    @staticmethod
+    async def list_voicelines(message):
         """
-        sag kein Foto ("Ich habe heute leider kein Foto für dich")
+        sprechen
         """
-        voice_channel = message.author.voice.channel
+        voicelines = map(lambda x: x.split(".")[0], os.listdir("sounds"))
+        await message.channel.send("Voicelines:\n- " + reduce(lambda x, y: x + "\n- " + y, voicelines))
+        # await message.channel.send("Test")
 
-        if voice_channel == None:
+    @staticmethod
+    async def say_voiceline(message):
+        """
+        sag <Voiceline>
+        """
+        try:
+            voice_channel = message.author.voice.channel
+        except AttributeError:
+            print("Error: Caller not in channel!")
             return
 
         voice_client = await voice_channel.connect()
-        audio_source = discord.FFmpegPCMAudio("sounds/kein_foto.mp3")
-        voice_client.play(audio_source)
-
-        while voice_client.is_playing():
-            await asyncio.sleep(1)
-
-        await voice_client.disconnect()
-
-    async def say_opfer(self, message):
-        """
-        sag Opfer ("Opfer")
-        """
-        voice_channel = message.author.voice.channel
-
-        if voice_channel == None:
-            return
-
-        voice_client = await voice_channel.connect()
-        audio_source = discord.FFmpegPCMAudio("sounds/opfer.mp3")
+        audio_source = discord.FFmpegPCMAudio("sounds/" + message + ".mp3")
         voice_client.play(audio_source)
 
         while voice_client.is_playing():
@@ -237,15 +230,17 @@ class HeidiClient(discord.Client):
 
     # Automatic Actions --------------------------------------------------------------------------
 
-    async def autoreact_to_girls(self, message):
+    @staticmethod
+    async def autoreact_to_girls(message):
         """
-        Ich ❤-e Nachrichten einer aktiven GNTM Teilnehmerin
+        ❤ aktives Model
         """
         await message.add_reaction("❤")
 
-    async def autoreact_to_jeremy(self, message):
+    @staticmethod
+    async def autoreact_to_jeremy(message):
         """
-        Ich ❤-e Nachrichten von Jeremy
+        🧀 Jeremy
         """
         await message.add_reaction("🧀")
 
