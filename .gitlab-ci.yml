@@ -6,7 +6,7 @@ stages:
   - push
 
 # Use this if your GitLab runner does not use socket binding
-# services:
+services:
   - docker:dind
 
 before_script:
