@@ -7,13 +7,9 @@ import datetime
 import asyncio
 
 from dotenv import load_dotenv
+from models import Models
 
 import discord
-
-# from discord import Intents
-
-# from scraper import Girls
-# from textgen import TextGen
 
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
@@ -23,43 +19,31 @@ GUILD = os.getenv("DISCORD_GUILD")  # Zocken mit Heidi
 class HeidiClient(discord.Client):
     def __init__(self):
         super().__init__(
-            # intents=Intents.default(),
             status="Nur eine kann Germany's next Topmodel werden!",
         )
 
         self.prefix = "Heidi, "
         self.prefix_regex = "^" + self.prefix
 
-        self.girls = Girls()  # scraped model list
-        self.bible = TextGen("bible.txt", 3)
+        self.models = Models()  # scraped model list
 
-        self.triggers = {}  # automatic actions
-        self.triggers[
-            lambda m: m.author.nick.lower() in self.girls.get_in_names()
-        ] = self.autoreact_to_girls
-        self.triggers[
-            lambda m: "jeremy" in m.author.nick.lower()
-        ] = self.autoreact_to_jeremy
+        self.triggers = {
+            lambda m: m.author.nick.lower() in self.models.get_in_names(): self.autoreact_to_girls,
+            lambda m: "jeremy" in m.author.nick.lower(): self.autoreact_to_jeremy
+        }  # automatic actions
 
-        self.matchers = {}  # react to messages
-        self.matchers["Hilfe$"] = self.show_help
-        self.matchers["Heidi!$"] = self.say_name
-        self.matchers["wer ist dabei\\?$"] = self.list_models_in
-        self.matchers["wer ist raus\\?$"] = self.list_models_out
-        self.matchers[".+, ja oder nein\\?$"] = self.magic_shell
-        self.matchers["wähle: (.+,?)+$"] = self.choose
-        self.matchers["gib Bild von .+$"] = self.show_model_picture
-        self.matchers["Countdown$"] = self.countdown
-        self.matchers["gib Link"] = self.show_link
-        self.matchers["welche Farbe .+\\?$"] = self.random_color
-        self.matchers["Bibelfake"] = self.generate_bible_quote
+        self.matchers = {"Hilfe$": self.show_help, "Heidi!$": self.say_name,
+                         "wer ist dabei\\?$": self.list_models_in,
+                         "wer ist raus\\?$": self.list_models_out,
+                         ".+, ja oder nein\\?$": self.magic_shell, "wähle: (.+,?)+$": self.choose,
+                         "gib Link": self.show_link, "welche Farbe .+\\?$": self.random_color,
+                         "sag kein Foto$": self.say_kein_foto,
+                         "sag Opfer": self.say_opfer
+                         }  # react to messages
 
-        ### Voicelines
+        # Voicelines
 
-        self.matchers["sag kein Foto$"] = self.say_kein_foto
-        self.matchers["sag Opfer"] = self.say_opfer
-
-    ### Helpers ------------------------------------------------------------------------------------
+    # Helpers ------------------------------------------------------------------------------------
 
     def _help_text(self):
         """
@@ -89,7 +73,7 @@ class HeidiClient(discord.Client):
         """
         return re.match(self.prefix_regex + matcher, message.content, re.IGNORECASE)
 
-    ### Events -------------------------------------------------------------------------------------
+    # Events -------------------------------------------------------------------------------------
 
     async def on_ready(self):
         print(f"{self.user} (id: {self.user.id}) has connected to Discord!")
@@ -108,7 +92,7 @@ class HeidiClient(discord.Client):
                 await self.matchers[matcher](message)
                 break
 
-    ### Commands -----------------------------------------------------------------------------------
+    # Commands -----------------------------------------------------------------------------------
 
     async def show_help(self, message):
         """
@@ -126,13 +110,13 @@ class HeidiClient(discord.Client):
         """
         wer ist dabei? (Liste der Models welche noch GNTM werden können)
         """
-        await message.channel.send("\n".join(self.girls.get_in_names()))
+        await message.channel.send("\n".join(self.models.get_in_names()))
 
     async def list_models_out(self, message):
         """
         wer ist raus? (Liste der Keks welche ich ge*ickt hab)
         """
-        await message.channel.send("\n".join(self.girls.get_out_names()))
+        await message.channel.send("\n".join(self.models.get_out_names()))
 
     async def show_model_picture(self, message):
         """
@@ -140,7 +124,7 @@ class HeidiClient(discord.Client):
         """
         name = message.content.split()[-1]
         picture = discord.Embed()
-        picture.set_image(url=self.girls.get_image(name))
+        picture.set_image(url=self.models.get_image(name))
         picture.set_footer(text=name)
         await message.channel.send(embed=picture)
 
@@ -168,23 +152,6 @@ class HeidiClient(discord.Client):
 
         choices = message.content.replace(",", "").split()[2:]
         await message.channel.send(random.choice(choices))
-
-    async def countdown(self, message):
-        """
-        Countdown (Zeit bis zur nächsten Folge)
-        """
-        date = datetime.date.today()
-        while date.weekday() != 3:  # 3 for thursday
-            date += datetime.timedelta(1)
-        next_gntm = datetime.datetime(date.year, date.month, date.day, 20, 15)
-
-        delta = next_gntm - datetime.datetime.now()
-        hours, rem = divmod(delta.seconds, 3600)
-        minutes, seconds = divmod(rem, 60)
-
-        await message.channel.send(
-            f"Noch {delta.days} Tage, {hours} Stunden und {minutes} Minuten bis zur nächsten Folge GNTM!"
-        )
 
     async def show_link(self, message):
         """
@@ -219,14 +186,7 @@ class HeidiClient(discord.Client):
         ]
         await message.channel.send(random.choice(choices))
 
-    async def generate_bible_quote(self, message):
-        """
-        Bibelfake! (Unsinn generieren)
-        """
-        quote = self.bible.generate_sentence()
-        await message.channel.send(" ".join(quote))
-
-    ### Voiceboard ---------------------------------------------------------------------------------
+    # Voiceboard ---------------------------------------------------------------------------------
 
     async def say_kein_foto(self, message):
         """
@@ -264,14 +224,13 @@ class HeidiClient(discord.Client):
 
         await voice_client.disconnect()
 
-    ### Automatic Actions --------------------------------------------------------------------------
+    # Automatic Actions --------------------------------------------------------------------------
 
     async def autoreact_to_girls(self, message):
         """
         Ich ❤-e Nachrichten einer aktiven GNTM Teilnehmerin
         """
         await message.add_reaction("❤")
-
 
     async def autoreact_to_jeremy(self, message):
         """
