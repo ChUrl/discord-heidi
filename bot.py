@@ -12,8 +12,8 @@ import discord
 
 # from discord import Intents
 
-from scraper import Girls
-from textgen import TextGen
+# from scraper import Girls
+# from textgen import TextGen
 
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
