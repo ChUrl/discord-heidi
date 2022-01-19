@@ -3,7 +3,6 @@
 import os
 import re
 import random
-import datetime
 import asyncio
 
 from dotenv import load_dotenv
@@ -11,7 +10,9 @@ from models import Models
 
 import discord
 
+# used to start the bot locally, for docker the variables have to be set when the container is run
 load_dotenv()
+
 TOKEN = os.getenv("DISCORD_TOKEN")
 GUILD = os.getenv("DISCORD_GUILD")  # Zocken mit Heidi
 
@@ -27,21 +28,31 @@ class HeidiClient(discord.Client):
 
         self.models = Models()  # scraped model list
 
+        # automatic actions
         self.triggers = {
             lambda m: m.author.nick.lower() in self.models.get_in_names(): self.autoreact_to_girls,
             lambda m: "jeremy" in m.author.nick.lower(): self.autoreact_to_jeremy
-        }  # automatic actions
+        }
 
-        self.matchers = {"Hilfe$": self.show_help, "Heidi!$": self.say_name,
+        # react to messages
+        self.matchers = {"Hilfe$": self.show_help,
+                         "Heidi!$": self.say_name,
+
+                         # GNTM stuff
                          "wer ist dabei\\?$": self.list_models_in,
                          "wer ist raus\\?$": self.list_models_out,
-                         ".+, ja oder nein\\?$": self.magic_shell, "wähle: (.+,?)+$": self.choose,
-                         "gib Link": self.show_link, "welche Farbe .+\\?$": self.random_color,
+                         "gib Bild von .+$": self.show_model_picture,
+                         "gib Link": self.show_link,
+
+                         # Fun stuff
+                         "welche Farbe .+\\?$": self.random_color,
+                         ".+, ja oder nein\\?$": self.magic_shell,
+                         "wähle: (.+,?)+$": self.choose,
+
+                         # Voicelines
                          "sag kein Foto$": self.say_kein_foto,
                          "sag Opfer": self.say_opfer
-                         }  # react to messages
-
-        # Voicelines
+        }
 
     # Helpers ------------------------------------------------------------------------------------
 
