@@ -204,7 +204,7 @@ class HeidiClient(discord.Client):
         """
         sprechen
         """
-        voicelines = map(lambda x: x.split(".")[0], os.listdir("sounds"))
+        voicelines = map(lambda x: x.split(".")[0], os.listdir("/sounds"))  # only works from docker
         await message.channel.send("Voicelines:\n- " + reduce(lambda x, y: x + "\n- " + y, voicelines))
         # await message.channel.send("Test")
 
@@ -220,7 +220,7 @@ class HeidiClient(discord.Client):
             return
 
         voice_client = await voice_channel.connect()
-        audio_source = discord.FFmpegPCMAudio("sounds/" + message + ".mp3")
+        audio_source = discord.FFmpegPCMAudio("/sounds/" + message + ".mp3")  # only works from docker
         voice_client.play(audio_source)
 
         while voice_client.is_playing():
