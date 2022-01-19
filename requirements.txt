@@ -1,6 +1,2 @@
 python-dotenv
-rich
 discord.py
-beautifulsoup4
-selenium
-pynacl
