@@ -208,6 +208,8 @@ class HeidiClient(discord.Client):
         await message.channel.send("Voicelines:\n- " + reduce(lambda x, y: x + "\n- " + y, voicelines))
         # await message.channel.send("Test")
 
+    # TODO: Don't connect to voice when file not found
+    # TODO: Filenames with spaces?
     @staticmethod
     async def say_voiceline(message):
         """
