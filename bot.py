@@ -223,8 +223,13 @@ class HeidiClient(discord.Client):
 
         soundfile = message.content.split(" ")[-1]
 
+        try:
+            audio_source = discord.FFmpegPCMAudio("/sounds/" + soundfile + ".mp3")  # only works from docker
+        except AttributeError:
+            print("Error: Invalid soundfile!")
+            return
+
         voice_client = await voice_channel.connect()
-        audio_source = discord.FFmpegPCMAudio("/sounds/" + soundfile + ".mp3")  # only works from docker
         voice_client.play(audio_source)
 
         while voice_client.is_playing():
