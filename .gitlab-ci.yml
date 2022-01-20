@@ -5,10 +5,10 @@ docker-build:
   stage: build
 
   rules:
-    - changes: # only run CI when these files have changed
+    - if: '$CI_COMMIT_REF_NAME == "master"' # only run on master
+      changes: # only run CI when these files have changed
       - "*.py"
       - "Dockerfile"
-      - ".gitlab-ci.yml"
 
   # services configure images that run during jobs linked to the image (above)
   services:
