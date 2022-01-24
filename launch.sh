@@ -1,6 +1,7 @@
 #!/bin/sh
 
-git -C HeidiBot pull
+cd /home/christoph/HeidiBot
+git pull
 
 docker pull registry.gitlab.com/churl/heidibot
 docker container rm -f heidibot
