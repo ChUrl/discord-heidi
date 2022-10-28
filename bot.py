@@ -29,6 +29,9 @@ class HeidiClient(discord.Client):
     def __init__(self, *, intents: discord.Intents):
         super().__init__(status="Nur eine kann GNTM werden!", intents=intents)
 
+        # Separate object that keeps all application command state
+        self.tree = app_commands.CommandTree(self)
+
         self.prefix = "Heidi, "
         self.prefix_regex = "^" + self.prefix
 
@@ -58,6 +61,14 @@ class HeidiClient(discord.Client):
             "sprechen": self.list_voicelines,
             "sag .+$": self.say_voiceline
         }
+
+    # Synchronize commands to guilds
+    async def setup_hook(self):
+        self.tree.copy_global_to(guild=LINUS_GUILD)
+        await self.tree.sync(guild=LINUS_GUILD)
+
+        self.tree.copy_global_to(guild=TEST_GUILD)
+        await self.tree.sync(guild=TEST_GUILD)
 
     # Helpers ------------------------------------------------------------------------------------
 
