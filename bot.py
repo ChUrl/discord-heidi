@@ -17,8 +17,8 @@ install(show_locals=True)
 # DONE: Migrate back to discord.py
 # DONE: Rewrite bot with slash commands (and making actual use of discord.py)
 # TODO: yt-dlp music support
-# TODO: Somehow upload voicelines more easily (from discord voice message?)
-# TODO: Reenable text/quote generation, allow uploading of training text files, allow switching "personalities"
+# TODO: Somehow upload voicelines more easily (from discord voice message?), also need to be distributed to folders so no more than 25 lines per folder
+# TODO: Reenable text/quote generation, allow uploading of training text files, allow switching "personalities" (/elon generates elon quote?)
 # TODO: Zalgo generator
 
 # IDs of the servers Heidi is used on
@@ -179,6 +179,8 @@ SOUNDDIR: str = "./voicelines/" # Local
 # SOUNDDIR: str = "/sounds/" # Docker
 
 # Example: https://discordpy.readthedocs.io/en/latest/interactions/api.html?highlight=autocomplete#discord.app_commands.autocomplete
+# NOTE: Only 25 items can be autocompleted
+# TODO: Generate autocomplete + say function pairs automatically for different sound folders so we can have more than 25 sound files
 async def sound_autocomplete(interaction: discord.Interaction, current: str) -> list[Choice[str]]:
     sounds = map(lambda x: x.split(".")[0], os.listdir(SOUNDDIR))
     return [Choice(name=sound, value=sound) for sound in sounds]
