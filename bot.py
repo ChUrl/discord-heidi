@@ -2,6 +2,7 @@
 
 import os, re, random, logging, asyncio, discord
 from discord import app_commands
+from discord.app_commands import Choice
 from functools import reduce
 from dotenv import load_dotenv
 from typing import Optional
@@ -167,7 +168,7 @@ async def choose(interaction: discord.Interaction, option_a: str, option_b: str)
     options = [option_a.strip(), option_b.strip()]
     await interaction.response.send_message(f"{options[0]} oder {options[1]}?\nHeidi sagt: {random.choice(options)}")
 
-@client.tree.command(name="giblinkbruder", description="Heidi hilft mit dem Link zu deiner Lieblingsshow im Qualitätsfernsehen.")
+@client.tree.command(name = "giblinkbruder", description = "Heidi hilft mit dem Link zu deiner Lieblingsshow im Qualitätsfernsehen.")
 async def show_link(interaction: discord.Interaction):
     link_pro7 = "https://www.prosieben.de/tv/germanys-next-topmodel/livestream"
     link_joyn = "https://www.joyn.de/serien/germanys-next-topmodel"
@@ -177,16 +178,15 @@ async def show_link(interaction: discord.Interaction):
 SOUNDDIR: str = "./voicelines/" # Local
 # SOUNDDIR: str = "/sounds/" # Docker
 
-@client.tree.command(name="sag", description="Heidi drückt den Knopf auf dem Soundboard.")
+# Example: https://discordpy.readthedocs.io/en/latest/interactions/api.html?highlight=autocomplete#discord.app_commands.autocomplete
+async def sound_autocomplete(interaction: discord.Interaction, current: str) -> list[Choice[str]]:
+    sounds = map(lambda x: x.split(".")[0], os.listdir(SOUNDDIR))
+    return [Choice(name=sound, value=sound) for sound in sounds]
+
+@client.tree.command(name = "sag", description = "Heidi drückt den Knopf auf dem Soundboard.")
 @app_commands.describe(sound = "Was soll Heidi sagen?")
+@app_commands.autocomplete(sound = sound_autocomplete)
 async def say_voiceline(interaction: discord.Interaction, sound: str):
-    voicelines = map(lambda x: x.split(".")[0], os.listdir(SOUNDDIR))  # only works from docker
-
-    if not sound in voicelines:
-        print("Invalid sound!")
-        await interaction.response.send_message(f"Heidi sagt: \"{sound}\" kanninich finden bruder")
-        return
-
     # Only Members can access voice channels
     if not isinstance(interaction.user, discord.Member):
         print("User not a member")
@@ -220,7 +220,6 @@ async def say_voiceline(interaction: discord.Interaction, sound: str):
         await asyncio.sleep(1)
 
     await voice_client.disconnect()
-
 
 # Example
 # Callable on members
