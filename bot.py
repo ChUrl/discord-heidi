@@ -14,10 +14,8 @@ from rich.traceback import install
 install(show_locals=True)
 
 # DONE: Migrate back to discord.py
-# TODO: Rewrite bot with slash commands (and making actual use of discord.py)
+# DONE: Rewrite bot with slash commands (and making actual use of discord.py)
 # TODO: yt-dlp music support
-# TODO: Send messages only to heidispam channel
-# TODO: Print status messages to heidispam
 # TODO: Somehow upload voicelines more easily (from discord voice message?)
 # TODO: Reenable text/quote generation, allow uploading of training text files, allow switching "personalities"
 # TODO: Zalgo generator
@@ -33,10 +31,6 @@ class HeidiClient(discord.Client):
         # Separate object that keeps all application command state
         self.tree = app_commands.CommandTree(self)
 
-        # TODO: Replace with slash commands
-        self.prefix = "Heidi, "
-        self.prefix_regex = "^" + self.prefix
-
         # self.models = Models()  # scraped model list
 
         # automatic actions on all messages
@@ -47,26 +41,6 @@ class HeidiClient(discord.Client):
             lambda m: "jeremy" in m.author.nick.lower(): self._autoreact_to_jeremy
         }
 
-        # TODO: Replace these by slash commands
-        # explicit commands
-        self.matchers = {
-            "Hilfe$": self.show_help,
-            "Heidi!$": self.say_name,
-
-            # GNTM stuff
-            # "wer ist dabei\\?$": self.list_models_in,
-            # "wer ist raus\\?$": self.list_models_out,
-            # "gib Bild von .+$": self.show_model_picture,
-            "gib Link$": self.show_link,
-
-            # Fun stuff
-            "welche Farbe .+\\?": self.random_color,
-            ".+, ja oder nein\\?": self.magic_shell,
-            "wähle: (.+,?)+$": self.choose,
-            "sprechen": self.list_voicelines,
-            "sag .+$": self.say_voiceline
-        }
-
     # Synchronize commands to guilds
     async def setup_hook(self):
         self.tree.copy_global_to(guild=LINUS_GUILD)
@@ -75,50 +49,7 @@ class HeidiClient(discord.Client):
         self.tree.copy_global_to(guild=TEST_GUILD)
         await self.tree.sync(guild=TEST_GUILD)
 
-    # Helpers ------------------------------------------------------------------------------------
-
-    def _help_text(self):
-        """
-        Generate help-string from docstrings of matchers and triggers
-        """
-        docstrings_triggers = [
-            "  - " + str(func.__doc__).strip() for func in self.auto_triggers.values()
-        ]
-        docstrings_matchers = [
-            "  - " + str(func.__doc__).strip() for func in self.matchers.values()
-        ]
-
-        response = 'Präfix: "' + self.prefix + '" (mit Leerzeichen)\n'
-        response += "--------------------------------------------------\n"
-
-        response += "Automatisch:\n"
-        response += "\n".join(docstrings_triggers)
-
-        response += "\n\nCommands:\n"
-        response += "\n".join(docstrings_matchers)
-
-        return response
-
-    def _match(self, matcher, message):
-        """
-        Check if a string matches against prefix + matcher (case-insensitive)
-        """
-        return re.match(self.prefix_regex + matcher, message.content, re.IGNORECASE)
-
     # Commands -----------------------------------------------------------------------------------
-
-    async def show_help(self, message):
-        """
-        Hilfe (Senpai UwU)
-        """
-        await message.channel.send(self._help_text())
-
-    @staticmethod
-    async def say_name(message):
-        """
-        Heidi!
-        """
-        await message.channel.send("HEIDI!")
 
     # async def list_models_in(self, message):
     #     """
@@ -141,68 +72,6 @@ class HeidiClient(discord.Client):
     #     picture.set_image(url=self.models.get_image(name))
     #     picture.set_footer(text=name)
     #     await message.channel.send(embed=picture)
-
-    @staticmethod
-    async def magic_shell(message):
-        """
-        <Frage>, ja oder nein?
-        """
-        choices = [
-            "Ja!",
-            "Jo.",
-            "Total!",
-            "Natürlich.",
-            "Nein!",
-            "Nö.",
-            "Nä.",
-            "Niemals!",
-        ]
-        await message.channel.send(random.choice(choices))
-
-    # TODO: Accept multi-word inputs: "Heidi, wähle: Ipp ist dumm, ich bin dumm"
-    @staticmethod
-    async def choose(message):
-        """
-        wähle: <Option 1>, <Option 2>, ...
-        """
-
-        choices = message.content.replace(",", "").split()[2:]
-        await message.channel.send(random.choice(choices))
-
-    @staticmethod
-    async def show_link(message):
-        """
-        gib Link
-        """
-        link_pro7 = "https://www.prosieben.de/tv/germanys-next-topmodel/livestream"
-        link_joyn = "https://www.joyn.de/serien/germanys-next-topmodel"
-
-        await message.channel.send(f"ProSieben: {link_pro7}\nJoyn: {link_joyn}")
-
-    @staticmethod
-    async def random_color(message):
-        """
-        welche Farbe ... <Ding>? (Zufällige Farbe)
-        """
-        choices = [
-            "Rot",
-            "Grün",
-            "Gelb",
-            "Blau",
-            "Lila",
-            "Pink",
-            "Türkis",
-            "Schwarz",
-            "Weiß",
-            "Grau",
-            "Gelb",
-            "Orange",
-            "Olivegrün",
-            "Mitternachtsblau",
-            "Braun",
-            "Tobe",
-        ]
-        await message.channel.send(random.choice(choices))
 
     # Voiceboard ---------------------------------------------------------------------------------
 
@@ -295,27 +164,65 @@ async def on_message(message):
             await action(message)
             break
 
-    # TODO: Replace by slash commands
-    for matcher in client.matchers:
-        if client._match(matcher, message):
-            await client.matchers[matcher](message)
-            break
-
 # Commands ---------------------------------------------------------------------------------------
 
-# Example
-@client.tree.command()
-async def hello(interaction: discord.Interaction):
-    """Says hello!"""
-    await interaction.response.send_message(f'Hi, {interaction.user.mention}')
+@client.tree.command(name="heidi", description="Heidi!")
+async def heidi_exclaim(interaction: discord.Interaction):
+    messages = [
+        "Die sind doch fast 18!",
+        "Heidi!",
+        "Du bist raus hihi :)",
+        "Dann zieh dich mal aus!",
+        "Warum denn so schüchtern?",
+        "Im TV ist das legal!",
+        "Das Stroh ist nur fürs Shooting!"
+    ]
+    await interaction.response.send_message(random.choice(messages))
+
+@client.tree.command(name="miesmuschel", description="Was denk Heidi?")
+async def magic_shell(interaction: discord.Interaction, question: str):
+    choices = [
+        "Ja!",
+        "Jo.",
+        "Total!",
+        "Natürlich.",
+        "Nein!",
+        "Nö.",
+        "Nä.",
+        "Niemals!",
+    ]
+    question = question.strip()
+    question_mark = "" if question[-1] == "?" else "?"
+    await interaction.response.send_message(f"{question}{question_mark}\nHeidi sagt: {random.choice(choices)}")
+
+# TODO: Allow , separated varargs, need to parse manually as slash commands don't support varargs
+@client.tree.command(name="wähle", description="Heidi trifft die Wahl")
+@app_commands.describe(option_a = "Erste möglichkeit")
+@app_commands.describe(option_b = "Zweite möglichkeit")
+async def choose(interaction: discord.Interaction, option_a: str, option_b: str):
+    options = [option_a.strip(), option_b.strip()]
+    await interaction.response.send_message(f"{options[0]} oder {options[1]}?\nHeidi sagt: {random.choice(options)}")
+
+@client.tree.command(name="giblinkbruder", description="Heidi hilft mit dem Link zu deiner Lieblingsshow im Qualitätsfernsehen")
+async def show_link(interaction: discord.Interaction):
+    link_pro7 = "https://www.prosieben.de/tv/germanys-next-topmodel/livestream"
+    link_joyn = "https://www.joyn.de/serien/germanys-next-topmodel"
+
+    await interaction.response.send_message(f"ProSieben: {link_pro7}\nJoyn: {link_joyn}")
+
+
+
+
 
 # Example
+# Callable on members
 @client.tree.context_menu(name='Show Join Date')
 async def show_join_date(interaction: discord.Interaction, member: discord.Member):
     # The format_dt function formats the date time into a human readable representation in the official client
     await interaction.response.send_message(f'{member} joined at {discord.utils.format_dt(member.joined_at)}')
 
 # Example
+# Callable on messages
 @client.tree.context_menu(name='Report to Moderators')
 async def report_message(interaction: discord.Interaction, message: discord.Message):
     # We're sending this response message with ephemeral=True, so only the command executor can see it
