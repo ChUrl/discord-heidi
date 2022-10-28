@@ -175,8 +175,8 @@ async def show_link(interaction: discord.Interaction):
 
     await interaction.response.send_message(f"ProSieben: {link_pro7}\nJoyn: {link_joyn}")
 
-SOUNDDIR: str = "./voicelines/" # Local
-# SOUNDDIR: str = "/sounds/" # Docker
+# SOUNDDIR: str = "./voicelines/" # Local
+SOUNDDIR: str = "/sounds/" # Docker
 
 # Example: https://discordpy.readthedocs.io/en/latest/interactions/api.html?highlight=autocomplete#discord.app_commands.autocomplete
 # NOTE: Only 25 items can be autocompleted
