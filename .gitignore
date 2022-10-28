@@ -6,3 +6,5 @@
 Pipfile.lock
 /.idea/
 /voicelines/
+.direnv
+/.envrc
