@@ -1,5 +1,5 @@
 {
-  description = "";
+  description = "HeidiBot for Discord";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
   inputs.flake-utils.url = "github:numtide/flake-utils";
@@ -15,14 +15,20 @@
         };
 
         myPython = pkgs.python310.withPackages (p: with p; [
-          yt-dlp
+          discordpy
+          python-dotenv
+          beautifulsoup4
+          requests
+          pynacl
+          rich
         ]);
       in {
         devShell = pkgs.devshell.mkShell {
-          name = "";
+          name = "HeidiBot";
 
           packages = with pkgs; [
             myPython
+            nodePackages.pyright # LSP
           ];
 
           # Use $1 for positional args
