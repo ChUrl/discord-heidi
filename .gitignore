@@ -8,3 +8,4 @@ Pipfile.lock
 /voicelines/
 .direnv
 /.envrc
+/discord.log
