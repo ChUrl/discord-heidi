@@ -73,46 +73,6 @@ class HeidiClient(discord.Client):
     #     picture.set_footer(text=name)
     #     await message.channel.send(embed=picture)
 
-    # Voiceboard ---------------------------------------------------------------------------------
-
-    @staticmethod
-    async def list_voicelines(message):
-        """
-        sprechen
-        """
-        voicelines = map(lambda x: x.split(".")[0], os.listdir("/sounds"))  # only works from docker
-        await message.channel.send("Voicelines:\n- " + reduce(lambda x, y: x + "\n- " + y, voicelines))
-        # await message.channel.send("Test")
-
-    # TODO: Don't connect to voice when file not found
-    # TODO: Filenames with spaces?
-    @staticmethod
-    async def say_voiceline(message):
-        """
-        sag <Voiceline>
-        """
-        try:
-            voice_channel = message.author.voice.channel
-        except AttributeError:
-            print("Error: Caller not in channel!")
-            return
-
-        soundfile = message.content.split(" ")[-1]
-
-        try:
-            open("/sounds/" + soundfile + ".mp3")
-        except IOError:
-            print("Error: Invalid soundfile!")
-            return
-
-        audio_source = discord.FFmpegPCMAudio("/sounds/" + soundfile + ".mp3")  # only works from docker
-        voice_client = await voice_channel.connect()
-        voice_client.play(audio_source)
-
-        while voice_client.is_playing():
-            await asyncio.sleep(1)
-
-        await voice_client.disconnect()
 
     # Automatic Actions --------------------------------------------------------------------------
 
@@ -207,15 +167,59 @@ async def choose(interaction: discord.Interaction, option_a: str, option_b: str)
     options = [option_a.strip(), option_b.strip()]
     await interaction.response.send_message(f"{options[0]} oder {options[1]}?\nHeidi sagt: {random.choice(options)}")
 
-@client.tree.command(name="giblinkbruder", description="Heidi hilft mit dem Link zu deiner Lieblingsshow im Qualitätsfernsehen")
+@client.tree.command(name="giblinkbruder", description="Heidi hilft mit dem Link zu deiner Lieblingsshow im Qualitätsfernsehen.")
 async def show_link(interaction: discord.Interaction):
     link_pro7 = "https://www.prosieben.de/tv/germanys-next-topmodel/livestream"
     link_joyn = "https://www.joyn.de/serien/germanys-next-topmodel"
 
     await interaction.response.send_message(f"ProSieben: {link_pro7}\nJoyn: {link_joyn}")
 
+SOUNDDIR: str = "./voicelines/" # Local
+# SOUNDDIR: str = "/sounds/" # Docker
 
+@client.tree.command(name="sag", description="Heidi drückt den Knopf auf dem Soundboard.")
+@app_commands.describe(sound = "Was soll Heidi sagen?")
+async def say_voiceline(interaction: discord.Interaction, sound: str):
+    voicelines = map(lambda x: x.split(".")[0], os.listdir(SOUNDDIR))  # only works from docker
 
+    if not sound in voicelines:
+        print("Invalid sound!")
+        await interaction.response.send_message(f"Heidi sagt: \"{sound}\" kanninich finden bruder")
+        return
+
+    # Only Members can access voice channels
+    if not isinstance(interaction.user, discord.Member):
+        print("User not a member")
+        await interaction.response.send_message("Heidi sagt: Komm in die Gruppe!")
+        return
+
+    member: discord.Member = interaction.user
+
+    # Member needs to be in voice channel to hear audio (Heidi needs to know the channel to join)
+    if (not member.voice) or (not member.voice.channel) or (not isinstance(member.voice.channel, discord.VoiceChannel)):
+        print("User not in (valid) voice channel!")
+        await interaction.response.send_message("Heidi sagt: Komm in den Channel!")
+        return
+
+    voice_channel: discord.VoiceChannel = member.voice.channel
+
+    try:
+        open(SOUNDDIR + sound + ".mp3")
+    except IOError:
+        print("Error: Invalid soundfile!")
+        await interaction.response.send_message(f"Heidi sagt: \"{sound}\" kanninich finden bruder")
+        return
+
+    await interaction.response.send_message(f"Heidi sagt: \"{sound}\"")
+
+    audio_source = discord.FFmpegPCMAudio(SOUNDDIR + sound + ".mp3")  # only works from docker
+    voice_client = await voice_channel.connect()
+    voice_client.play(audio_source)
+
+    while voice_client.is_playing():
+        await asyncio.sleep(1)
+
+    await voice_client.disconnect()
 
 
 # Example
