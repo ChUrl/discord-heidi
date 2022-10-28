@@ -13,8 +13,9 @@ from typing import Optional
 from rich.traceback import install
 install(show_locals=True)
 
-# TODO: Migrate back to discord.py
+# DONE: Migrate back to discord.py
 # TODO: Rewrite bot with slash commands (and making actual use of discord.py)
+# TODO: yt-dlp music support
 # TODO: Send messages only to heidispam channel
 # TODO: Print status messages to heidispam
 # TODO: Somehow upload voicelines more easily (from discord voice message?)
@@ -32,18 +33,22 @@ class HeidiClient(discord.Client):
         # Separate object that keeps all application command state
         self.tree = app_commands.CommandTree(self)
 
+        # TODO: Replace with slash commands
         self.prefix = "Heidi, "
         self.prefix_regex = "^" + self.prefix
 
         # self.models = Models()  # scraped model list
 
-        # automatic actions
-        self.triggers = {
+        # automatic actions on all messages
+        # auto_triggers is a map with tuples of two functions: (predicate, action)
+        # if the predicate is true the action is performed
+        self.auto_triggers = {
             # lambda m: m.author.nick.lower() in self.models.get_in_names(): self.autoreact_to_girls,
-            lambda m: "jeremy" in m.author.nick.lower(): self.autoreact_to_jeremy
+            lambda m: "jeremy" in m.author.nick.lower(): self._autoreact_to_jeremy
         }
 
-        # commands
+        # TODO: Replace these by slash commands
+        # explicit commands
         self.matchers = {
             "Hilfe$": self.show_help,
             "Heidi!$": self.say_name,
@@ -77,7 +82,7 @@ class HeidiClient(discord.Client):
         Generate help-string from docstrings of matchers and triggers
         """
         docstrings_triggers = [
-            "  - " + str(func.__doc__).strip() for func in self.triggers.values()
+            "  - " + str(func.__doc__).strip() for func in self.auto_triggers.values()
         ]
         docstrings_matchers = [
             "  - " + str(func.__doc__).strip() for func in self.matchers.values()
@@ -99,26 +104,6 @@ class HeidiClient(discord.Client):
         Check if a string matches against prefix + matcher (case-insensitive)
         """
         return re.match(self.prefix_regex + matcher, message.content, re.IGNORECASE)
-
-    # Events -------------------------------------------------------------------------------------
-
-    async def on_ready(self):
-        print(f"{self.user} (id: {self.user.id}) has connected to Discord!")
-
-    async def on_message(self, message):
-        # Skip Heidis own messages
-        if message.author == client.user:
-            return
-
-        for trigger in self.triggers:
-            if trigger(message):
-                await self.triggers[trigger](message)
-                break
-
-        for matcher in self.matchers:
-            if self._match(matcher, message):
-                await self.matchers[matcher](message)
-                break
 
     # Commands -----------------------------------------------------------------------------------
 
@@ -262,20 +247,61 @@ class HeidiClient(discord.Client):
 
     # Automatic Actions --------------------------------------------------------------------------
 
-    @staticmethod
-    async def autoreact_to_girls(message):
-        """
-        ❤ aktives Model
-        """
-        await message.add_reaction("❤")
+    # @staticmethod
+    # async def autoreact_to_girls(message):
+    #     """
+    #     ❤ aktives Model
+    #     """
+    #     await message.add_reaction("❤")
 
     @staticmethod
-    async def autoreact_to_jeremy(message):
+    async def _autoreact_to_jeremy(message):
         """
         🧀 Jeremy
         """
         await message.add_reaction("🧀")
 
+# ------------------------------------------------------------------------------------------------
+
+# Log to file
+handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+
+# Intents specification is no longer optional
+intents = discord.Intents.default()
+intents.members = True # Allow to react to member join/leave etc
+intents.message_content = True # Allow to read message content from arbitrary messages
+
+# Setup our client
+client = HeidiClient(intents=intents)
+
+# ------------------------------------------------------------------------------------------------
+# NOTE: I defined the events outside of the Client class, don't know if I like it or not...
+
+@client.event
+async def on_ready():
+    print(f"{client.user} (id: {client.user.id}) has connected to Discord!")
+
+@client.event
+async def on_message(message):
+    # Skip Heidis own messages
+    if message.author == client.user:
+        return
+
+    # Automatic actions for all messages
+    # python iterates over the keys of a map
+    for predicate in client.auto_triggers:
+        if predicate(message):
+            action = client.auto_triggers[predicate]
+            await action(message)
+            break
+
+    # TODO: Replace by slash commands
+    for matcher in client.matchers:
+        if client._match(matcher, message):
+            await client.matchers[matcher](message)
+            break
+
+# ------------------------------------------------------------------------------------------------
 
 # Used to start the bot locally, for docker the variables have to be set when the container is run
 load_dotenv()
@@ -283,14 +309,6 @@ TOKEN: str = os.getenv("DISCORD_TOKEN") or ""
 
 # Start client if TOKEN valid
 if TOKEN != "":
-    # Log to file
-    handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
-
-    # Intents specification is no longer optional
-    intents = discord.Intents.default()
-    intents.message_content = True
-
-    client = HeidiClient(intents=intents)
     client.run(TOKEN, log_handler=handler)
 else:
     print("DISCORD_TOKEN not found, exiting...")
