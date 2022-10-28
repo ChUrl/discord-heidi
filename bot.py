@@ -221,36 +221,25 @@ async def say_voiceline(interaction: discord.Interaction, sound: str):
 
     await voice_client.disconnect()
 
-# Example
+# TODO: More insults
 # Callable on members
-@client.tree.context_menu(name='Show Join Date')
-async def show_join_date(interaction: discord.Interaction, member: discord.Member):
-    # The format_dt function formats the date time into a human readable representation in the official client
-    await interaction.response.send_message(f'{member} joined at {discord.utils.format_dt(member.joined_at)}')
+@client.tree.context_menu(name="beleidigen")
+async def insult(interaction: discord.Interaction, member: discord.Member): # with message: discord.Message this can be called on a message
+    if not member.dm_channel:
+        await member.create_dm()
 
-# Example
-# Callable on messages
-@client.tree.context_menu(name='Report to Moderators')
-async def report_message(interaction: discord.Interaction, message: discord.Message):
-    # We're sending this response message with ephemeral=True, so only the command executor can see it
-    await interaction.response.send_message(
-        f'Thanks for reporting this message by {message.author.mention} to our moderators.', ephemeral=True
-    )
+    if not member.dm_channel:
+        print("Error creating DMChannel!")
+        await interaction.response.send_message("Heidi sagt: Gib mal DM Nummer süße*r!")
+        return
 
-    # Handle report by sending it into a log channel
-    log_channel = interaction.guild.get_channel(821511861178204164)  # replace with your channel id
+    insults = [
+        "Du kleiner Hurensohn!",
+        "Fick dich!"
+    ]
 
-    embed = discord.Embed(title='Reported Message')
-    if message.content:
-        embed.description = message.content
-
-    embed.set_author(name=message.author.display_name, icon_url=message.author.display_avatar.url)
-    embed.timestamp = message.created_at
-
-    url_view = discord.ui.View()
-    url_view.add_item(discord.ui.Button(label='Go to Message', style=discord.ButtonStyle.url, url=message.jump_url))
-
-    await log_channel.send(embed=embed, view=url_view)
+    await member.dm_channel.send(random.choice(insults))
+    await interaction.response.send_message("Anzeige ist raus!") # with ephemeral = True only the caller can see the answer
 
 # ------------------------------------------------------------------------------------------------
 
