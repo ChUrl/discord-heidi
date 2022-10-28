@@ -1,51 +1,63 @@
-import os
-import re
-import random
-import asyncio
+# Example: https://github.com/Rapptz/discord.py/blob/master/examples/app_commands/basic.py
+
+import os, re, random, logging, asyncio, discord
+from discord import app_commands
 from functools import reduce
-
 from dotenv import load_dotenv
-from models import Models
+from typing import Optional
 
-import discord
+# TODO: Reenable and extend scraper
+# from models import Models
 
-# used to start the bot locally, for docker the variables have to be set when the container is run
-load_dotenv()
-TOKEN = os.getenv("DISCORD_TOKEN")
+# We're fancy today
+from rich.traceback import install
+install(show_locals=True)
 
+# TODO: Migrate back to discord.py
+# TODO: Rewrite bot with slash commands (and making actual use of discord.py)
+# TODO: Send messages only to heidispam channel
+# TODO: Print status messages to heidispam
+# TODO: Somehow upload voicelines more easily (from discord voice message?)
+# TODO: Reenable text/quote generation, allow uploading of training text files, allow switching "personalities"
+# TODO: Zalgo generator
+
+# IDs of the servers Heidi is used on
+LINUS_GUILD = discord.Object(id=431154792308408340)
+TEST_GUILD = discord.Object(id=821511861178204161)
 
 class HeidiClient(discord.Client):
-    def __init__(self):
-        super().__init__(
-            status="Nur eine kann GNTM werden!",
-        )
+    def __init__(self, *, intents: discord.Intents):
+        super().__init__(status="Nur eine kann GNTM werden!", intents=intents)
 
         self.prefix = "Heidi, "
         self.prefix_regex = "^" + self.prefix
 
-        self.models = Models()  # scraped model list
+        # self.models = Models()  # scraped model list
 
         # automatic actions
         self.triggers = {
-            lambda m: m.author.nick.lower() in self.models.get_in_names(): self.autoreact_to_girls,
-            lambda m: "jeremy" in m.author.nick.lower(): self.autoreact_to_jeremy}
+            # lambda m: m.author.nick.lower() in self.models.get_in_names(): self.autoreact_to_girls,
+            lambda m: "jeremy" in m.author.nick.lower(): self.autoreact_to_jeremy
+        }
 
         # commands
-        self.matchers = {"Hilfe$": self.show_help,
-                         "Heidi!$": self.say_name,
+        self.matchers = {
+            "Hilfe$": self.show_help,
+            "Heidi!$": self.say_name,
 
-                         # GNTM stuff
-                         "wer ist dabei\\?$": self.list_models_in,
-                         "wer ist raus\\?$": self.list_models_out,
-                         "gib Bild von .+$": self.show_model_picture,
-                         "gib Link$": self.show_link,
+            # GNTM stuff
+            # "wer ist dabei\\?$": self.list_models_in,
+            # "wer ist raus\\?$": self.list_models_out,
+            # "gib Bild von .+$": self.show_model_picture,
+            "gib Link$": self.show_link,
 
-                         # Fun stuff
-                         "welche Farbe .+\\?": self.random_color,
-                         ".+, ja oder nein\\?": self.magic_shell,
-                         "wähle: (.+,?)+$": self.choose,
-                         "sprechen": self.list_voicelines,
-                         "sag .+$": self.say_voiceline}
+            # Fun stuff
+            "welche Farbe .+\\?": self.random_color,
+            ".+, ja oder nein\\?": self.magic_shell,
+            "wähle: (.+,?)+$": self.choose,
+            "sprechen": self.list_voicelines,
+            "sag .+$": self.say_voiceline
+        }
 
     # Helpers ------------------------------------------------------------------------------------
 
@@ -54,10 +66,10 @@ class HeidiClient(discord.Client):
         Generate help-string from docstrings of matchers and triggers
         """
         docstrings_triggers = [
-            "  - " + func.__doc__.strip() for func in self.triggers.values()
+            "  - " + str(func.__doc__).strip() for func in self.triggers.values()
         ]
         docstrings_matchers = [
-            "  - " + func.__doc__.strip() for func in self.matchers.values()
+            "  - " + str(func.__doc__).strip() for func in self.matchers.values()
         ]
 
         response = 'Präfix: "' + self.prefix + '" (mit Leerzeichen)\n'
@@ -83,6 +95,7 @@ class HeidiClient(discord.Client):
         print(f"{self.user} (id: {self.user.id}) has connected to Discord!")
 
     async def on_message(self, message):
+        # Skip Heidis own messages
         if message.author == client.user:
             return
 
@@ -111,27 +124,27 @@ class HeidiClient(discord.Client):
         """
         await message.channel.send("HEIDI!")
 
-    async def list_models_in(self, message):
-        """
-        wer ist dabei?
-        """
-        await message.channel.send("\n".join(self.models.get_in_names()))
+    # async def list_models_in(self, message):
+    #     """
+    #     wer ist dabei?
+    #     """
+    #     await message.channel.send("\n".join(self.models.get_in_names()))
 
-    async def list_models_out(self, message):
-        """
-        wer ist raus? (Liste der Keks welche ge*ickt wurden)
-        """
-        await message.channel.send("\n".join(self.models.get_out_names()))
+    # async def list_models_out(self, message):
+    #     """
+    #     wer ist raus? (Liste der Keks welche ge*ickt wurden)
+    #     """
+    #     await message.channel.send("\n".join(self.models.get_out_names()))
 
-    async def show_model_picture(self, message):
-        """
-        gib Bild von <Name>
-        """
-        name = message.content.split()[-1]
-        picture = discord.Embed()
-        picture.set_image(url=self.models.get_image(name))
-        picture.set_footer(text=name)
-        await message.channel.send(embed=picture)
+    # async def show_model_picture(self, message):
+    #     """
+    #     gib Bild von <Name>
+    #     """
+    #     name = message.content.split()[-1]
+    #     picture = discord.Embed()
+    #     picture.set_image(url=self.models.get_image(name))
+    #     picture.set_footer(text=name)
+    #     await message.channel.send(embed=picture)
 
     @staticmethod
     async def magic_shell(message):
@@ -253,5 +266,20 @@ class HeidiClient(discord.Client):
         await message.add_reaction("🧀")
 
 
-client = HeidiClient()
-client.run(TOKEN)
+# Used to start the bot locally, for docker the variables have to be set when the container is run
+load_dotenv()
+TOKEN: str = os.getenv("DISCORD_TOKEN") or ""
+
+# Start client if TOKEN valid
+if TOKEN != "":
+    # Log to file
+    handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+
+    # Intents specification is no longer optional
+    intents = discord.Intents.default()
+    intents.message_content = True
+
+    client = HeidiClient(intents=intents)
+    client.run(TOKEN, log_handler=handler)
+else:
+    print("DISCORD_TOKEN not found, exiting...")
