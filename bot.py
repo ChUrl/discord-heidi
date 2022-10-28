@@ -179,7 +179,9 @@ async def heidi_exclaim(interaction: discord.Interaction):
     ]
     await interaction.response.send_message(random.choice(messages))
 
-@client.tree.command(name="miesmuschel", description="Was denk Heidi?")
+@client.tree.command(name="miesmuschel", description="Was denkt Heidi?")
+@app_commands.rename(question = "frage")
+@app_commands.describe(question = "Heidi wird es beantworten!")
 async def magic_shell(interaction: discord.Interaction, question: str):
     choices = [
         "Ja!",
@@ -196,9 +198,11 @@ async def magic_shell(interaction: discord.Interaction, question: str):
     await interaction.response.send_message(f"{question}{question_mark}\nHeidi sagt: {random.choice(choices)}")
 
 # TODO: Allow , separated varargs, need to parse manually as slash commands don't support varargs
-@client.tree.command(name="wähle", description="Heidi trifft die Wahl")
-@app_commands.describe(option_a = "Erste möglichkeit")
-@app_commands.describe(option_b = "Zweite möglichkeit")
+@client.tree.command(name="wähle", description="Heidi trifft die Wahl!")
+@app_commands.rename(option_a = "entweder")
+@app_commands.describe(option_a = "Ist es vielleicht dies?")
+@app_commands.rename(option_b = "oder")
+@app_commands.describe(option_b = "Oder doch eher das?")
 async def choose(interaction: discord.Interaction, option_a: str, option_b: str):
     options = [option_a.strip(), option_b.strip()]
     await interaction.response.send_message(f"{options[0]} oder {options[1]}?\nHeidi sagt: {random.choice(options)}")
