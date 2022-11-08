@@ -5,7 +5,10 @@ from discord import app_commands
 from discord.app_commands import Choice
 from functools import reduce
 from dotenv import load_dotenv
-from typing import Optional
+from typing import Optional, Union
+
+from textgen import textgen
+from textgen_markov import MarkovTextGenerator
 
 # TODO: Reenable and extend scraper
 # from models import Models
@@ -14,8 +17,17 @@ from typing import Optional
 from rich.traceback import install
 install(show_locals=True)
 
+# ================================================================================================ #
+# ================================================================================================ #
+# NOTE: Always set this correctly:                                                                 #
+DOCKER = False                                                                                     #
+# ================================================================================================ #
+# ================================================================================================ #
+
 # DONE: Migrate back to discord.py
 # DONE: Rewrite bot with slash commands (and making actual use of discord.py)
+# TODO: Insult statistics (you have insulted 20 times)
+# TODO: Only post in heidi-spam channel
 # TODO: yt-dlp music support
 # TODO: Somehow upload voicelines more easily (from discord voice message?), also need to be distributed to folders so no more than 25 lines per folder
 # TODO: Reenable text/quote generation, allow uploading of training text files, allow switching "personalities" (/elon generates elon quote?)
@@ -41,6 +53,21 @@ class HeidiClient(discord.Client):
             # lambda m: m.author.nick.lower() in self.models.get_in_names(): self.autoreact_to_girls,
             lambda m: "jeremy" in m.author.nick.lower(): self._autoreact_to_jeremy
         }
+
+        # Textgen
+        self.textgen_models: dict[str, textgen] = {
+            # The name must correspond to the name of the training text file
+            "bibel": MarkovTextGenerator(3), # Prefix length of 3
+            "kommunistisches_manifest": MarkovTextGenerator(3),
+            "musk": MarkovTextGenerator(3)
+        }
+
+        for name, model in self.textgen_models.items():
+            model.init(name) # Loads the textfile
+            if DOCKER:
+                model.load()
+            else:
+                model.train()
 
     # Synchronize commands to guilds
     async def setup_hook(self):
@@ -127,6 +154,13 @@ async def on_message(message):
 
 # Commands ---------------------------------------------------------------------------------------
 
+@client.tree.command(name = "giblinkbruder", description = "Heidi hilft mit dem Link zu deiner Lieblingsshow im Qualitätsfernsehen.")
+async def show_link(interaction: discord.Interaction):
+    link_pro7 = "https://www.prosieben.de/tv/germanys-next-topmodel/livestream"
+    link_joyn = "https://www.joyn.de/serien/germanys-next-topmodel"
+
+    await interaction.response.send_message(f"ProSieben: {link_pro7}\nJoyn: {link_joyn}")
+
 @client.tree.command(name="heidi", description="Heidi!")
 async def heidi_exclaim(interaction: discord.Interaction):
     messages = [
@@ -168,15 +202,32 @@ async def choose(interaction: discord.Interaction, option_a: str, option_b: str)
     options = [option_a.strip(), option_b.strip()]
     await interaction.response.send_message(f"{options[0]} oder {options[1]}?\nHeidi sagt: {random.choice(options)}")
 
-@client.tree.command(name = "giblinkbruder", description = "Heidi hilft mit dem Link zu deiner Lieblingsshow im Qualitätsfernsehen.")
-async def show_link(interaction: discord.Interaction):
-    link_pro7 = "https://www.prosieben.de/tv/germanys-next-topmodel/livestream"
-    link_joyn = "https://www.joyn.de/serien/germanys-next-topmodel"
+async def quote_model_autocomplete(interaction: discord.Interaction, current: str) -> list[Choice[str]]:
+    models = client.textgen_models.keys()
+    return [Choice(name=model, value=model) for model in models]
 
-    await interaction.response.send_message(f"ProSieben: {link_pro7}\nJoyn: {link_joyn}")
+@client.tree.command(name="zitat", description="Heidi zitiert!")
+@app_commands.rename(quote_model = "style")
+@app_commands.describe(quote_model = "Woraus soll Heidi zitieren?")
+@app_commands.autocomplete(quote_model = quote_model_autocomplete)
+async def quote(interaction: discord.Interaction, quote_model: str):
+    generated_quote = client.textgen_models[quote_model].generate_sentence()
+    joined_quote = " ".join(generated_quote)
+    await interaction.response.send_message(f"Heidi zitiert: \"{joined_quote}\"")
 
-# SOUNDDIR: str = "./voicelines/" # Local
-SOUNDDIR: str = "/sounds/" # Docker
+@client.tree.command(name="vervollständige", description="Heidi beendet den Satz!")
+@app_commands.rename(prompt = "satzanfang")
+@app_commands.describe(prompt = "Der Satzanfang wird vervollständigt.")
+@app_commands.rename(quote_model = "style")
+@app_commands.describe(quote_model = "Woraus soll Heidi vervollständigen?")
+@app_commands.autocomplete(quote_model = quote_model_autocomplete)
+async def complete(interaction: discord.Interaction, prompt: str, quote_model: str):
+    prompt = re.sub(r"[^a-zäöüß'.,]+", " ", prompt.lower()) # only keep valid chars
+    generated_quote = client.textgen_models[quote_model].complete_sentence(prompt.split())
+    joined_quote = " ".join(generated_quote)
+    await interaction.response.send_message(f"Heidi sagt: \"{joined_quote}\"")
+
+SOUNDDIR: str = "/sounds/" if DOCKER else "./voicelines/"
 
 # Example: https://discordpy.readthedocs.io/en/latest/interactions/api.html?highlight=autocomplete#discord.app_commands.autocomplete
 # NOTE: Only 25 items can be autocompleted
@@ -222,6 +273,8 @@ async def say_voiceline(interaction: discord.Interaction, sound: str):
         await asyncio.sleep(1)
 
     await voice_client.disconnect()
+
+# Contextmenu ------------------------------------------------------------------------------------
 
 # TODO: More insults
 # Callable on members
