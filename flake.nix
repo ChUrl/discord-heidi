@@ -21,6 +21,9 @@
           requests
           pynacl
           rich
+          torch
+          numpy
+          nltk
         ]);
       in {
         devShell = pkgs.devshell.mkShell {
