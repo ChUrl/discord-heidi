@@ -18,7 +18,7 @@ class MarkovTextGenerator(textgen):
         self.order = order
 
     def init(self, filename): # Filename is needed for every type of model so it's part of the interface
-        with open(f"./textfiles/{filename}.txt") as file:
+        with open(f"./textfiles/{filename}.txt", "r") as file:
             # Remove all characters except a-zäöüß'.,
             self.wordbase = re.sub(r"[^a-zäöüß'.,]+", " ", file.read().lower()).split()
 
