@@ -1,0 +1,26 @@
+name: Build Heidi Docker image
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "Dockerfile"
+      - "*.py"
+      - "requirements.txt"
+
+jobs:
+  build-docker:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Login to container registry
+        uses: docker/login-action@v3
+        with:
+          registry: gitea.local.chriphost.de
+          username: ${{ secrets.CONTAINER_REGISTRY_USER }}
+          password: ${{ secrets.CONTAINER_REGISTRY_TOKEN }}
+      - name: Build Docker image
+        run: docker build . --file Dockerfile --tag gitea.local.chriphost.de/christoph/discord-heidi:latest
+      - name: Push Docker image
+        run: docker push gitea.local.chriphost.de/christoph/discord-heidi:latest
