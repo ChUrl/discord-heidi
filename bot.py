@@ -11,7 +11,7 @@ from textgen import textgen
 from textgen_markov import MarkovTextGenerator
 from textgen_lstm import LSTMTextGenerator
 
-# TODO: Reenable and extend scraper
+# TODO: Reenable + extend scraper
 # from models import Models
 
 # We're fancy today
