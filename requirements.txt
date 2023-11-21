@@ -1,10 +1,14 @@
-discord.py # maintained again
-# py-cord # maintained fork of discord.py
-python-dotenv # discord guild secrets
-beautifulsoup4 # html parsing
-requests # request web page
-pynacl # voice support
 rich
-torch # LSTM
-numpy # LSTM
-nltk # Textgen
+
+discord.py # maintained again
+pynacl # voice support
+python-dotenv # discord guild secrets
+
+# Webscraping
+# requests
+# beautifulsoup4
+
+# Textgeneration
+# torch
+# numpy
+# nltk
