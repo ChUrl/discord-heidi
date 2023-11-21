@@ -273,7 +273,7 @@ async def say_voiceline(interaction: discord.Interaction, board: str, sound: str
     voice_channel: discord.VoiceChannel = member.voice.channel
 
     try:
-        open(SOUNDDIR + board + "/" + sound + ".mp3")
+        open(SOUNDDIR + board + "/" + sound + ".mkv")
     except IOError:
         print("Error: Invalid soundfile!")
         await interaction.response.send_message(f"Heidi sagt: \"{board}/{sound}\" kanninich finden bruder")
@@ -306,7 +306,18 @@ async def insult(interaction: discord.Interaction, member: discord.Member): # wi
 
     insults = [
         "Du kleiner Hurensohn!",
-        "Fick dich!"
+        "Fick dich!",
+        "Fotze!",
+        "Du Sohn einer Dirne!",
+        "Ipp hat gesagt du stinkst!",
+        "Ich furze in den Bart deines Vaters!",
+        "Geh auf der Autobahn spielen!",
+        "Du Bananenbieger!",
+        "Du kommst bei mir nichtmal durch die Vorauswahl!",
+        "Opfer!",
+        "Du miese Raupe!",
+        "Geh Steckdosen befruchten!",
+        "Richtiger Gesichtsgünther ey!"
     ]
 
     await member.dm_channel.send(random.choice(insults))
