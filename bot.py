@@ -281,7 +281,7 @@ async def say_voiceline(interaction: discord.Interaction, board: str, sound: str
 
     await interaction.response.send_message(f"Heidi sagt: \"{board}/{sound}\"")
 
-    audio_source = discord.FFmpegPCMAudio(SOUNDDIR + board + "/" + sound + ".mp3")  # only works from docker
+    audio_source = discord.FFmpegPCMAudio(SOUNDDIR + board + "/" + sound + ".mkv")  # only works from docker
     voice_client = await voice_channel.connect()
     voice_client.play(audio_source)
 
