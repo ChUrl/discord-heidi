@@ -242,16 +242,20 @@ async def choose(interaction: discord.Interaction, option_a: str, option_b: str)
 SOUNDDIR: str = "/sounds/" if DOCKER else "./voicelines/"
 
 # Example: https://discordpy.readthedocs.io/en/latest/interactions/api.html?highlight=autocomplete#discord.app_commands.autocomplete
-# NOTE: Only 25 items can be autocompleted
-# TODO: Generate autocomplete + say function pairs automatically for different sound folders so we can have more than 25 sound files
+async def board_autocomplete(interaction: discord.Interaction, current: str) -> list[Choice[str]]:
+    boards = os.listdir(SOUNDDIR)
+    return [Choice(name=board, value=board) for board in boards]
+    
 async def sound_autocomplete(interaction: discord.Interaction, current: str) -> list[Choice[str]]:
-    sounds = map(lambda x: x.split(".")[0], os.listdir(SOUNDDIR))
+    board = interaction.namespace.board # TODO: Can't work?
+    sounds = map(lambda x: x.split(".")[0], os.listdir(SOUNDDIR + board + "/"))
     return [Choice(name=sound, value=sound) for sound in sounds]
 
 @client.tree.command(name = "sag", description = "Heidi drückt den Knopf auf dem Soundboard.")
 @app_commands.describe(sound = "Was soll Heidi sagen?")
+@app_commands.autocomplete(board = board_autocomplete)
 @app_commands.autocomplete(sound = sound_autocomplete)
-async def say_voiceline(interaction: discord.Interaction, sound: str):
+async def say_voiceline(interaction: discord.Interaction, board: str, sound: str):
     # Only Members can access voice channels
     if not isinstance(interaction.user, discord.Member):
         print("User not a member")
@@ -269,15 +273,15 @@ async def say_voiceline(interaction: discord.Interaction, sound: str):
     voice_channel: discord.VoiceChannel = member.voice.channel
 
     try:
-        open(SOUNDDIR + sound + ".mp3")
+        open(SOUNDDIR + board + "/" + sound + ".mp3")
     except IOError:
         print("Error: Invalid soundfile!")
-        await interaction.response.send_message(f"Heidi sagt: \"{sound}\" kanninich finden bruder")
+        await interaction.response.send_message(f"Heidi sagt: \"{board}/{sound}\" kanninich finden bruder")
         return
 
-    await interaction.response.send_message(f"Heidi sagt: \"{sound}\"")
+    await interaction.response.send_message(f"Heidi sagt: \"{board}/{sound}\"")
 
-    audio_source = discord.FFmpegPCMAudio(SOUNDDIR + sound + ".mp3")  # only works from docker
+    audio_source = discord.FFmpegPCMAudio(SOUNDDIR + board + "/" + sound + ".mp3")  # only works from docker
     voice_client = await voice_channel.connect()
     voice_client.play(audio_source)
 
