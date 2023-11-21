@@ -7,9 +7,10 @@ from functools import reduce
 from dotenv import load_dotenv
 from typing import Optional, Union
 
-from textgen import textgen
-from textgen_markov import MarkovTextGenerator
-from textgen_lstm import LSTMTextGenerator
+# TODO: Reenable + extend textgen
+# from textgen import textgen
+# from textgen_markov import MarkovTextGenerator
+# from textgen_lstm import LSTMTextGenerator
 
 # TODO: Reenable + extend scraper
 # from models import Models
@@ -21,7 +22,7 @@ install(show_locals=True)
 # ================================================================================================ #
 # ================================================================================================ #
 # NOTE: Always set this correctly:                                                                 #
-DOCKER = False                                                                                     #
+DOCKER = True                                                                                      #
 # ================================================================================================ #
 # ================================================================================================ #
 
@@ -58,7 +59,7 @@ class HeidiClient(discord.Client):
         # Textgen
         self.textgen_models: dict[str, textgen] = {
             # The name must correspond to the name of the training text file
-            "kommunistisches_manifest": LSTMTextGenerator(10),
+            # "kommunistisches_manifest": LSTMTextGenerator(10),
             # "musk": LSTMTextGenerator(10),
             # "bibel": LSTMTextGenerator(10)
 
@@ -213,30 +214,30 @@ async def choose(interaction: discord.Interaction, option_a: str, option_b: str)
     options = [option_a.strip(), option_b.strip()]
     await interaction.response.send_message(f"{options[0]} oder {options[1]}?\nHeidi sagt: {random.choice(options)}")
 
-async def quote_model_autocomplete(interaction: discord.Interaction, current: str) -> list[Choice[str]]:
-    models = client.textgen_models.keys()
-    return [Choice(name=model, value=model) for model in models]
+# async def quote_model_autocomplete(interaction: discord.Interaction, current: str) -> list[Choice[str]]:
+#     models = client.textgen_models.keys()
+#     return [Choice(name=model, value=model) for model in models]
 
-@client.tree.command(name="zitat", description="Heidi zitiert!")
-@app_commands.rename(quote_model = "style")
-@app_commands.describe(quote_model = "Woraus soll Heidi zitieren?")
-@app_commands.autocomplete(quote_model = quote_model_autocomplete)
-async def quote(interaction: discord.Interaction, quote_model: str):
-    generated_quote = client.textgen_models[quote_model].generate_sentence()
-    joined_quote = " ".join(generated_quote)
-    await interaction.response.send_message(f"Heidi zitiert: \"{joined_quote}\"")
+# @client.tree.command(name="zitat", description="Heidi zitiert!")
+# @app_commands.rename(quote_model = "style")
+# @app_commands.describe(quote_model = "Woraus soll Heidi zitieren?")
+# @app_commands.autocomplete(quote_model = quote_model_autocomplete)
+# async def quote(interaction: discord.Interaction, quote_model: str):
+#     generated_quote = client.textgen_models[quote_model].generate_sentence()
+#     joined_quote = " ".join(generated_quote)
+#     await interaction.response.send_message(f"Heidi zitiert: \"{joined_quote}\"")
 
-@client.tree.command(name="vervollständige", description="Heidi beendet den Satz!")
-@app_commands.rename(prompt = "satzanfang")
-@app_commands.describe(prompt = "Der Satzanfang wird vervollständigt.")
-@app_commands.rename(quote_model = "style")
-@app_commands.describe(quote_model = "Woraus soll Heidi vervollständigen?")
-@app_commands.autocomplete(quote_model = quote_model_autocomplete)
-async def complete(interaction: discord.Interaction, prompt: str, quote_model: str):
-    prompt = re.sub(r"[^a-zäöüß'.,]+", " ", prompt.lower()) # only keep valid chars
-    generated_quote = client.textgen_models[quote_model].complete_sentence(prompt.split())
-    joined_quote = " ".join(generated_quote)
-    await interaction.response.send_message(f"Heidi sagt: \"{joined_quote}\"")
+# @client.tree.command(name="vervollständige", description="Heidi beendet den Satz!")
+# @app_commands.rename(prompt = "satzanfang")
+# @app_commands.describe(prompt = "Der Satzanfang wird vervollständigt.")
+# @app_commands.rename(quote_model = "style")
+# @app_commands.describe(quote_model = "Woraus soll Heidi vervollständigen?")
+# @app_commands.autocomplete(quote_model = quote_model_autocomplete)
+# async def complete(interaction: discord.Interaction, prompt: str, quote_model: str):
+#     prompt = re.sub(r"[^a-zäöüß'.,]+", " ", prompt.lower()) # only keep valid chars
+#     generated_quote = client.textgen_models[quote_model].complete_sentence(prompt.split())
+#     joined_quote = " ".join(generated_quote)
+#     await interaction.response.send_message(f"Heidi sagt: \"{joined_quote}\"")
 
 SOUNDDIR: str = "/sounds/" if DOCKER else "./voicelines/"
 
