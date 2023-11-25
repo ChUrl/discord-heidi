@@ -1,6 +1,6 @@
 # Example: https://github.com/Rapptz/discord.py/blob/master/examples/app_commands/basic.py
 
-import os, re, random, logging, asyncio, discord
+import os, re, random, logging, asyncio, discord, configparser
 from discord import app_commands
 from discord.app_commands import Choice
 from functools import reduce
@@ -20,6 +20,7 @@ from rich.traceback import install
 
 install(show_locals=True)
 
+
 # ================================================================================================ #
 # ================================================================================================ #
 # NOTE: Always set this correctly:                                                                 #
@@ -27,8 +28,7 @@ DOCKER = False  #
 # ================================================================================================ #
 # ================================================================================================ #
 
-# DONE: Migrate back to discord.py
-# DONE: Rewrite bot with slash commands (and making actual use of discord.py)
+
 # TODO: Only post in heidi-spam channel
 # TODO: yt-dlp music support
 # TODO: Somehow upload voicelines more easily (from discord voice message?)
@@ -44,6 +44,11 @@ class HeidiClient(discord.Client):
 
         # Separate object that keeps all application command state
         self.tree = app_commands.CommandTree(self)
+
+        # Handle persistent configuration
+        self.config = configparser.ConfigParser()
+        self.config.read("Heidi.conf")
+        self.print_config()
 
         # self.models = Models()  # scraped model list
 
@@ -87,6 +92,16 @@ class HeidiClient(discord.Client):
 
         self.tree.copy_global_to(guild=TEST_GUILD)
         await self.tree.sync(guild=TEST_GUILD)
+
+    def print_config(self):
+        print("Read persistent configuration:\n")
+
+        for section in self.config.sections():
+            print(f"[{section}]")
+            for key in self.config[section]:
+                print(f"{key}={self.config[section][key]}")
+
+        print("")
 
     # Commands -----------------------------------------------------------------------------------
 
@@ -233,6 +248,9 @@ async def choose(interaction: discord.Interaction, option_a: str, option_b: str)
     )
 
 
+# TextGen ----------------------------------------------------------------------------------------
+
+
 # async def quote_model_autocomplete(interaction: discord.Interaction, current: str) -> list[Choice[str]]:
 #     models = client.textgen_models.keys()
 #     return [Choice(name=model, value=model) for model in models]
@@ -258,6 +276,10 @@ async def choose(interaction: discord.Interaction, option_a: str, option_b: str)
 #     joined_quote = " ".join(generated_quote)
 #     await interaction.response.send_message(f"Heidi sagt: \"{joined_quote}\"")
 
+
+# Sounds -----------------------------------------------------------------------------------------
+
+
 SOUNDDIR: str = "/sounds/" if DOCKER else "./heidi-sounds/"
 
 
@@ -267,16 +289,22 @@ async def board_autocomplete(
 ) -> list[Choice[str]]:
     boards: List[str] = os.listdir(SOUNDDIR)
 
-    return [Choice(name=board, value=board) for board in boards if board.startswith(current)]
+    return [
+        Choice(name=board, value=board) for board in boards if board.startswith(current)
+    ]
 
 
 async def sound_autocomplete(
     interaction: discord.Interaction, current: str
 ) -> list[Choice[str]]:
     board: str = interaction.namespace.board
-    sounds: List[str] = list(map(lambda x: x.split(".")[0], os.listdir(SOUNDDIR + board + "/")))
+    sounds: List[str] = list(
+        map(lambda x: x.split(".")[0], os.listdir(SOUNDDIR + board + "/"))
+    )
 
-    return [Choice(name=sound, value=sound) for sound in sounds if sound.startswith(current)]
+    return [
+        Choice(name=sound, value=sound) for sound in sounds if sound.startswith(current)
+    ]
 
 
 @client.tree.command(
@@ -332,7 +360,6 @@ async def say_voiceline(interaction: discord.Interaction, board: str, sound: str
 # Contextmenu ------------------------------------------------------------------------------------
 
 
-# TODO: More insults
 # Callable on members
 @client.tree.context_menu(name="beleidigen")
 async def insult(
@@ -369,6 +396,7 @@ async def insult(
 
 
 # ------------------------------------------------------------------------------------------------
+
 
 # Used to start the bot locally, for docker the variables have to be set when the container is run
 load_dotenv()
