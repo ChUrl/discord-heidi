@@ -11,7 +11,7 @@
         pkgs = import nixpkgs {
           inherit system;
           config.allowUnfree = true;
-          overlays = [ devshell.overlay ];
+          overlays = [ devshell.overlays.default ];
         };
 
         # TODO: Originally it was nixpkgs.fetchurl but that didn't work, pkgs.fetchurl did...
@@ -35,7 +35,7 @@
           };
         }));
 
-        myPython = pkgs.python310.withPackages (p: with p; [
+        myPython = pkgs.python311.withPackages (p: with p; [
           # Basic
           rich
 
@@ -45,15 +45,15 @@
           pynacl
 
           # Scraping
-          beautifulsoup4
-          requests
+          # beautifulsoup4
+          # requests
 
           # MachineLearning
-          torch-rocm
-          torchvision-rocm
-          numpy
-          matplotlib
-          nltk
+          # torch-rocm
+          # torchvision-rocm
+          # numpy
+          # matplotlib
+          # nltk
         ]);
       in {
         devShell = pkgs.devshell.mkShell {
@@ -61,7 +61,7 @@
 
           packages = with pkgs; [
             myPython
-            nodePackages.pyright # LSP
+            # nodePackages.pyright # LSP
           ];
 
           # Use $1 for positional args
