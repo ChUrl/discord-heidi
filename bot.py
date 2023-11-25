@@ -5,7 +5,7 @@ from discord import app_commands
 from discord.app_commands import Choice
 from functools import reduce
 from dotenv import load_dotenv
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 # TODO: Reenable + extend textgen
 # from textgen import textgen
@@ -17,27 +17,26 @@ from typing import Optional, Union
 
 # We're fancy today
 from rich.traceback import install
+
 install(show_locals=True)
 
 # ================================================================================================ #
 # ================================================================================================ #
 # NOTE: Always set this correctly:                                                                 #
-DOCKER = True                                                                                      #
+DOCKER = False  #
 # ================================================================================================ #
 # ================================================================================================ #
 
 # DONE: Migrate back to discord.py
 # DONE: Rewrite bot with slash commands (and making actual use of discord.py)
-# TODO: Insult statistics (you have insulted 20 times)
 # TODO: Only post in heidi-spam channel
 # TODO: yt-dlp music support
-# TODO: Somehow upload voicelines more easily (from discord voice message?), also need to be distributed to folders so no more than 25 lines per folder
-# TODO: Reenable text/quote generation, allow uploading of training text files, allow switching "personalities" (/elon generates elon quote?)
-# TODO: Zalgo generator
+# TODO: Somehow upload voicelines more easily (from discord voice message?)
 
 # IDs of the servers Heidi is used on
 LINUS_GUILD = discord.Object(id=431154792308408340)
 TEST_GUILD = discord.Object(id=821511861178204161)
+
 
 class HeidiClient(discord.Client):
     def __init__(self, *, intents: discord.Intents):
@@ -53,33 +52,33 @@ class HeidiClient(discord.Client):
         # if the predicate is true the action is performed
         self.auto_triggers = {
             # lambda m: m.author.nick.lower() in self.models.get_in_names(): self.autoreact_to_girls,
-            lambda m: "jeremy" in m.author.nick.lower(): self._autoreact_to_jeremy
+            lambda m: "jeremy"
+            in m.author.nick.lower(): self._autoreact_to_jeremy
         }
 
         # Textgen
-        self.textgen_models: dict[str, textgen] = {
-            # The name must correspond to the name of the training text file
-            # "kommunistisches_manifest": LSTMTextGenerator(10),
-            # "musk": LSTMTextGenerator(10),
-            # "bibel": LSTMTextGenerator(10)
+        # self.textgen_models: dict[str, textgen] = {
+        #     # The name must correspond to the name of the training text file
+        #     "kommunistisches_manifest": LSTMTextGenerator(10),
+        #     "musk": LSTMTextGenerator(10),
+        #     "bibel": LSTMTextGenerator(10)
+        #     "bibel": MarkovTextGenerator(3), # Prefix length of 3
+        #     "kommunistisches_manifest": MarkovTextGenerator(3),
+        #     "musk": MarkovTextGenerator(3)
+        # }
 
-            # "bibel": MarkovTextGenerator(3), # Prefix length of 3
-            # "kommunistisches_manifest": MarkovTextGenerator(3),
-            # "musk": MarkovTextGenerator(3)
-        }
+        # for name, model in self.textgen_models.items():
+        #     model.init(name)  # Loads the textfile
 
-        for name, model in self.textgen_models.items():
-            model.init(name) # Loads the textfile
+        #     if os.path.exists(f"weights/{name}_lstm_model.pt"):
+        #         model.load()
+        #     elif not DOCKER:
+        #         model.train()
+        #     else:
+        #         print("Error: Can't load model", name)
 
-            if os.path.exists(f"weights/{name}_lstm_model.pt"):
-                model.load()
-            elif not DOCKER:
-                model.train()
-            else:
-                print("Error: Can't load model", name)
-
-            print("Generating test sentence for", name)
-            self.textgen_models[name].generate_sentence()
+        #     print("Generating test sentence for", name)
+        #     self.textgen_models[name].generate_sentence()
 
     # Synchronize commands to guilds
     async def setup_hook(self):
@@ -113,7 +112,6 @@ class HeidiClient(discord.Client):
     #     picture.set_footer(text=name)
     #     await message.channel.send(embed=picture)
 
-
     # Automatic Actions --------------------------------------------------------------------------
 
     # @staticmethod
@@ -130,15 +128,16 @@ class HeidiClient(discord.Client):
         """
         await message.add_reaction("🧀")
 
+
 # ------------------------------------------------------------------------------------------------
 
 # Log to file
-handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+handler = logging.FileHandler(filename="discord.log", encoding="utf-8", mode="w")
 
 # Intents specification is no longer optional
 intents = discord.Intents.default()
-intents.members = True # Allow to react to member join/leave etc
-intents.message_content = True # Allow to read message content from arbitrary messages
+intents.members = True  # Allow to react to member join/leave etc
+intents.message_content = True  # Allow to read message content from arbitrary messages
 
 # Setup our client
 client = HeidiClient(intents=intents)
@@ -146,9 +145,14 @@ client = HeidiClient(intents=intents)
 # Events -----------------------------------------------------------------------------------------
 # NOTE: I defined the events outside of the Client class, don't know if I like it or not...
 
+
 @client.event
 async def on_ready():
-    print(f"{client.user} (id: {client.user.id}) has connected to Discord!")
+    if client.user != None:
+        print(f"{client.user} (id: {client.user.id}) has connected to Discord!")
+    else:
+        print(f"client.user is None!")
+
 
 @client.event
 async def on_message(message):
@@ -164,14 +168,22 @@ async def on_message(message):
             await action(message)
             break
 
+
 # Commands ---------------------------------------------------------------------------------------
 
-@client.tree.command(name = "giblinkbruder", description = "Heidi hilft mit dem Link zu deiner Lieblingsshow im Qualitätsfernsehen.")
+
+@client.tree.command(
+    name="giblinkbruder",
+    description="Heidi hilft mit dem Link zu deiner Lieblingsshow im Qualitätsfernsehen.",
+)
 async def show_link(interaction: discord.Interaction):
     link_pro7 = "https://www.prosieben.de/tv/germanys-next-topmodel/livestream"
     link_joyn = "https://www.joyn.de/serien/germanys-next-topmodel"
 
-    await interaction.response.send_message(f"ProSieben: {link_pro7}\nJoyn: {link_joyn}")
+    await interaction.response.send_message(
+        f"ProSieben: {link_pro7}\nJoyn: {link_joyn}"
+    )
+
 
 @client.tree.command(name="heidi", description="Heidi!")
 async def heidi_exclaim(interaction: discord.Interaction):
@@ -182,13 +194,14 @@ async def heidi_exclaim(interaction: discord.Interaction):
         "Dann zieh dich mal aus!",
         "Warum denn so schüchtern?",
         "Im TV ist das legal!",
-        "Das Stroh ist nur fürs Shooting!"
+        "Das Stroh ist nur fürs Shooting!",
     ]
     await interaction.response.send_message(random.choice(messages))
 
+
 @client.tree.command(name="miesmuschel", description="Was denkt Heidi?")
-@app_commands.rename(question = "frage")
-@app_commands.describe(question = "Heidi wird es beantworten!")
+@app_commands.rename(question="frage")
+@app_commands.describe(question="Heidi wird es beantworten!")
 async def magic_shell(interaction: discord.Interaction, question: str):
     choices = [
         "Ja!",
@@ -202,17 +215,23 @@ async def magic_shell(interaction: discord.Interaction, question: str):
     ]
     question = question.strip()
     question_mark = "" if question[-1] == "?" else "?"
-    await interaction.response.send_message(f"{question}{question_mark}\nHeidi sagt: {random.choice(choices)}")
+    await interaction.response.send_message(
+        f"{question}{question_mark}\nHeidi sagt: {random.choice(choices)}"
+    )
+
 
 # TODO: Allow , separated varargs, need to parse manually as slash commands don't support varargs
 @client.tree.command(name="wähle", description="Heidi trifft die Wahl!")
-@app_commands.rename(option_a = "entweder")
-@app_commands.describe(option_a = "Ist es vielleicht dies?")
-@app_commands.rename(option_b = "oder")
-@app_commands.describe(option_b = "Oder doch eher das?")
+@app_commands.rename(option_a="entweder")
+@app_commands.describe(option_a="Ist es vielleicht dies?")
+@app_commands.rename(option_b="oder")
+@app_commands.describe(option_b="Oder doch eher das?")
 async def choose(interaction: discord.Interaction, option_a: str, option_b: str):
     options = [option_a.strip(), option_b.strip()]
-    await interaction.response.send_message(f"{options[0]} oder {options[1]}?\nHeidi sagt: {random.choice(options)}")
+    await interaction.response.send_message(
+        f"{options[0]} oder {options[1]}?\nHeidi sagt: {random.choice(options)}"
+    )
+
 
 # async def quote_model_autocomplete(interaction: discord.Interaction, current: str) -> list[Choice[str]]:
 #     models = client.textgen_models.keys()
@@ -239,22 +258,33 @@ async def choose(interaction: discord.Interaction, option_a: str, option_b: str)
 #     joined_quote = " ".join(generated_quote)
 #     await interaction.response.send_message(f"Heidi sagt: \"{joined_quote}\"")
 
-SOUNDDIR: str = "/sounds/" if DOCKER else "./voicelines/"
+SOUNDDIR: str = "/sounds/" if DOCKER else "./heidi-sounds/"
+
 
 # Example: https://discordpy.readthedocs.io/en/latest/interactions/api.html?highlight=autocomplete#discord.app_commands.autocomplete
-async def board_autocomplete(interaction: discord.Interaction, current: str) -> list[Choice[str]]:
-    boards = os.listdir(SOUNDDIR)
-    return [Choice(name=board, value=board) for board in boards]
-    
-async def sound_autocomplete(interaction: discord.Interaction, current: str) -> list[Choice[str]]:
-    board = interaction.namespace.board # TODO: Can't work?
-    sounds = map(lambda x: x.split(".")[0], os.listdir(SOUNDDIR + board + "/"))
-    return [Choice(name=sound, value=sound) for sound in sounds]
+async def board_autocomplete(
+    interaction: discord.Interaction, current: str
+) -> list[Choice[str]]:
+    boards: List[str] = os.listdir(SOUNDDIR)
 
-@client.tree.command(name = "sag", description = "Heidi drückt den Knopf auf dem Soundboard.")
-@app_commands.describe(sound = "Was soll Heidi sagen?")
-@app_commands.autocomplete(board = board_autocomplete)
-@app_commands.autocomplete(sound = sound_autocomplete)
+    return [Choice(name=board, value=board) for board in boards if board.startswith(current)]
+
+
+async def sound_autocomplete(
+    interaction: discord.Interaction, current: str
+) -> list[Choice[str]]:
+    board: str = interaction.namespace.board
+    sounds: List[str] = list(map(lambda x: x.split(".")[0], os.listdir(SOUNDDIR + board + "/")))
+
+    return [Choice(name=sound, value=sound) for sound in sounds if sound.startswith(current)]
+
+
+@client.tree.command(
+    name="sag", description="Heidi drückt den Knopf auf dem Soundboard."
+)
+@app_commands.describe(sound="Was soll Heidi sagen?")
+@app_commands.autocomplete(board=board_autocomplete)
+@app_commands.autocomplete(sound=sound_autocomplete)
 async def say_voiceline(interaction: discord.Interaction, board: str, sound: str):
     # Only Members can access voice channels
     if not isinstance(interaction.user, discord.Member):
@@ -265,7 +295,11 @@ async def say_voiceline(interaction: discord.Interaction, board: str, sound: str
     member: discord.Member = interaction.user
 
     # Member needs to be in voice channel to hear audio (Heidi needs to know the channel to join)
-    if (not member.voice) or (not member.voice.channel) or (not isinstance(member.voice.channel, discord.VoiceChannel)):
+    if (
+        (not member.voice)
+        or (not member.voice.channel)
+        or (not isinstance(member.voice.channel, discord.VoiceChannel))
+    ):
         print("User not in (valid) voice channel!")
         await interaction.response.send_message("Heidi sagt: Komm in den Channel!")
         return
@@ -276,12 +310,16 @@ async def say_voiceline(interaction: discord.Interaction, board: str, sound: str
         open(SOUNDDIR + board + "/" + sound + ".mkv")
     except IOError:
         print("Error: Invalid soundfile!")
-        await interaction.response.send_message(f"Heidi sagt: \"{board}/{sound}\" kanninich finden bruder")
+        await interaction.response.send_message(
+            f'Heidi sagt: "{board}/{sound}" kanninich finden bruder'
+        )
         return
 
-    await interaction.response.send_message(f"Heidi sagt: \"{board}/{sound}\"")
+    await interaction.response.send_message(f'Heidi sagt: "{board}/{sound}"')
 
-    audio_source = discord.FFmpegPCMAudio(SOUNDDIR + board + "/" + sound + ".mkv")  # only works from docker
+    audio_source = discord.FFmpegPCMAudio(
+        SOUNDDIR + board + "/" + sound + ".mkv"
+    )  # only works from docker
     voice_client = await voice_channel.connect()
     voice_client.play(audio_source)
 
@@ -290,12 +328,16 @@ async def say_voiceline(interaction: discord.Interaction, board: str, sound: str
 
     await voice_client.disconnect()
 
+
 # Contextmenu ------------------------------------------------------------------------------------
+
 
 # TODO: More insults
 # Callable on members
 @client.tree.context_menu(name="beleidigen")
-async def insult(interaction: discord.Interaction, member: discord.Member): # with message: discord.Message this can be called on a message
+async def insult(
+    interaction: discord.Interaction, member: discord.Member
+):  # with message: discord.Message this can be called on a message
     if not member.dm_channel:
         await member.create_dm()
 
@@ -317,11 +359,14 @@ async def insult(interaction: discord.Interaction, member: discord.Member): # wi
         "Opfer!",
         "Du miese Raupe!",
         "Geh Steckdosen befruchten!",
-        "Richtiger Gesichtsgünther ey!"
+        "Richtiger Gesichtsgünther ey!",
     ]
 
     await member.dm_channel.send(random.choice(insults))
-    await interaction.response.send_message("Anzeige ist raus!") # with ephemeral = True only the caller can see the answer
+    await interaction.response.send_message(
+        "Anzeige ist raus!"
+    )  # with ephemeral = True only the caller can see the answer
+
 
 # ------------------------------------------------------------------------------------------------
 
