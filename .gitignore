@@ -11,3 +11,4 @@ Pipfile.lock
 /discord.log
 /disabled_voicelines/
 *.svg
+.vscode
