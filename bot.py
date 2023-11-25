@@ -38,6 +38,9 @@ LINUS_GUILD = discord.Object(id=431154792308408340)
 TEST_GUILD = discord.Object(id=821511861178204161)
 
 
+CONFIGPATH = "/config/Heidi.conf" if DOCKER else "./Heidi.conf"
+
+
 class HeidiClient(discord.Client):
     def __init__(self, *, intents: discord.Intents):
         super().__init__(status="Nur eine kann GNTM werden!", intents=intents)
@@ -47,7 +50,10 @@ class HeidiClient(discord.Client):
 
         # Handle persistent configuration
         self.config = configparser.ConfigParser()
-        self.config.read("Heidi.conf")
+        if not os.path.exists(CONFIGPATH):
+            os.mknod(CONFIGPATH)
+        self.config.read(CONFIGPATH)
+        self.update_to_default_config()
         self.print_config()
 
         # self.models = Models()  # scraped model list
@@ -93,6 +99,21 @@ class HeidiClient(discord.Client):
 
         self.tree.copy_global_to(guild=TEST_GUILD)
         await self.tree.sync(guild=TEST_GUILD)
+
+    def update_to_default_config(self):
+        """
+        Adds config keys to the config, if they don't exist yet.
+        """
+        config_sections = ["ENTRANCE.SOUND"]
+
+        for section in config_sections:
+            if section not in self.config:
+                print(f"Adding section {section} to Heidi.conf")
+                self.config[section] = dict()
+
+        with open(CONFIGPATH, "w") as file:
+            print("Writing Heidi.conf")
+            self.config.write(file)
 
     def print_config(self):
         print("Read persistent configuration:\n")
@@ -195,11 +216,37 @@ async def on_message(message):
 # Config Commands --------------------------------------------------------------------------------
 
 
+async def config_key_autocomplete(
+    interaction: discord.Interaction, current: str
+) -> List[Choice[str]]:
+    return [
+        Choice(name=key, value=key)
+        for key in client.config.sections()  # @todo can access client here?
+        if key.lower().startswith(current.lower())
+    ]
+
+
+async def config_value_autocomplete(
+    interaction: discord.Interaction, current: str
+) -> List[Choice[str]]:
+    return [Choice(name="None", value="None")]
+
+
 @client.tree.command(
     name="userconfig",
-    description="User-spezifische Heidi-Einstellungen (Heidi merkt sie sich in ihrem riesigen Gehirn)."
+    description="User-spezifische Heidi-Einstellungen (Heidi merkt sie sich in ihrem riesigen Gehirn).",
 )
-async def user_config(interaction: discord.Interaction):
+@app_commands.rename(config_key="option")
+@app_commands.describe(config_key="Die Option, welche du ändern willst.")
+@app_commands.autocomplete(config_key=config_key_autocomplete)
+@app_commands.rename(config_value="wert")
+@app_commands.describe(
+    config_value="Der Wert, auf welche die Option gesetzt werden soll."
+)
+@app_commands.autocomplete(config_value=config_value_autocomplete)
+async def user_config(
+    interaction: discord.Interaction, config_key: str, config_value: str
+):
     pass
 
 
@@ -305,24 +352,28 @@ SOUNDDIR: str = "/sounds/" if DOCKER else "./heidi-sounds/"
 # Example: https://discordpy.readthedocs.io/en/latest/interactions/api.html?highlight=autocomplete#discord.app_commands.autocomplete
 async def board_autocomplete(
     interaction: discord.Interaction, current: str
-) -> list[Choice[str]]:
+) -> List[Choice[str]]:
     boards: List[str] = os.listdir(SOUNDDIR)
 
     return [
-        Choice(name=board, value=board) for board in boards if board.lower().startswith(current.lower())
+        Choice(name=board, value=board)
+        for board in boards
+        if board.lower().startswith(current.lower())
     ]
 
 
 async def sound_autocomplete(
     interaction: discord.Interaction, current: str
-) -> list[Choice[str]]:
+) -> List[Choice[str]]:
     board: str = interaction.namespace.board
     sounds: List[str] = list(
         map(lambda x: x.split(".")[0], os.listdir(SOUNDDIR + board + "/"))
     )
 
     return [
-        Choice(name=sound, value=sound) for sound in sounds if sound.lower().startswith(current.lower())
+        Choice(name=sound, value=sound)
+        for sound in sounds
+        if sound.lower().startswith(current.lower())
     ]
 
 
