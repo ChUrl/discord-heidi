@@ -22,6 +22,6 @@ jobs:
           username: ${{ secrets.CONTAINER_REGISTRY_USER }}
           password: ${{ secrets.CONTAINER_REGISTRY_TOKEN }}
       - name: Build Docker image
-        run: docker build . --file Dockerfile --tag gitea.local.chriphost.de/christoph/discord-heidi:latest
+        run: docker build . --file Dockerfile --tag gitea.vps.chriphost.de/christoph/discord-heidi:latest
       - name: Push Docker image
-        run: docker push gitea.local.chriphost.de/christoph/discord-heidi:latest
+        run: docker push gitea.vps.chriphost.de/christoph/discord-heidi:latest
