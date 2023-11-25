@@ -19,12 +19,13 @@ from typing import Dict, List, Optional, Union
 from rich.traceback import install
 
 install(show_locals=True)
+load_dotenv()
 
 
 # ================================================================================================ #
 # ================================================================================================ #
-# NOTE: Always set this correctly:                                                                 #
-DOCKER = False  #
+# NOTE: Always set this correctly:
+DOCKER = os.getenv("DOCKER") == "True"
 # ================================================================================================ #
 # ================================================================================================ #
 
@@ -36,7 +37,6 @@ DOCKER = False  #
 # IDs of the servers Heidi is used on
 LINUS_GUILD = discord.Object(id=431154792308408340)
 TEST_GUILD = discord.Object(id=821511861178204161)
-
 
 CONFIGPATH = "/config" if DOCKER else "."
 USERCONFIGNAME = "Heidi_User.conf"
@@ -350,7 +350,9 @@ async def user_config(
     client.user_config[config_key][member.name] = config_value
     client.write_user_config()
 
-    await interaction.response.send_message(f"Ok, ich schreibe {member.name}={config_value} in mein fettes Gehirn!")
+    await interaction.response.send_message(
+        f"Ok, ich schreibe {member.name}={config_value} in mein fettes Gehirn!"
+    )
 
 
 # Commands ---------------------------------------------------------------------------------------
@@ -597,11 +599,11 @@ async def play_voice_line_for_member(
 
 
 # Used to start the bot locally, for docker the variables have to be set when the container is run
-load_dotenv()
 TOKEN: str = os.getenv("DISCORD_TOKEN") or ""
 
 # Start client if TOKEN valid
 if TOKEN != "":
+    print(f"Running client with DOCKER={DOCKER}")
     client.run(TOKEN, log_handler=handler)
 else:
     print("DISCORD_TOKEN not found, exiting...")
