@@ -350,6 +350,8 @@ async def user_config(
     client.user_config[config_key][member.name] = config_value
     client.write_user_config()
 
+    await interaction.response.send_message(f"Ok, ich schreibe {member.name}={config_value} in mein fettes Gehirn!")
+
 
 # Commands ---------------------------------------------------------------------------------------
 
