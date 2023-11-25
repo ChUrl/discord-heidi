@@ -57,8 +57,9 @@ class HeidiClient(discord.Client):
         # if the predicate is true the action is performed
         self.auto_triggers = {
             # lambda m: m.author.nick.lower() in self.models.get_in_names(): self.autoreact_to_girls,
-            lambda m: "jeremy"
-            in m.author.nick.lower(): self._autoreact_to_jeremy
+            lambda m: "jeremy" in m.author.nick.lower(): self._autoreact_to_jeremy,
+            lambda m: "kardashian" in m.author.nick.lower()
+            or "jenner" in m.author.nick.lower(): self._autoreact_to_kardashian,
         }
 
         # Textgen
@@ -142,6 +143,13 @@ class HeidiClient(discord.Client):
         🧀 Jeremy
         """
         await message.add_reaction("🧀")
+
+    @staticmethod
+    async def _autoreact_to_kardashian(message):
+        """
+        💄 Kardashian
+        """
+        await message.add_reaction("💄")
 
 
 # ------------------------------------------------------------------------------------------------
