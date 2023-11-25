@@ -192,6 +192,17 @@ async def on_message(message):
             break
 
 
+# Config Commands --------------------------------------------------------------------------------
+
+
+@client.tree.command(
+    name="userconfig",
+    description="User-spezifische Heidi-Einstellungen (Heidi merkt sie sich in ihrem riesigen Gehirn)."
+)
+async def user_config(interaction: discord.Interaction):
+    pass
+
+
 # Commands ---------------------------------------------------------------------------------------
 
 
@@ -298,7 +309,7 @@ async def board_autocomplete(
     boards: List[str] = os.listdir(SOUNDDIR)
 
     return [
-        Choice(name=board, value=board) for board in boards if board.startswith(current)
+        Choice(name=board, value=board) for board in boards if board.lower().startswith(current.lower())
     ]
 
 
@@ -311,7 +322,7 @@ async def sound_autocomplete(
     )
 
     return [
-        Choice(name=sound, value=sound) for sound in sounds if sound.startswith(current)
+        Choice(name=sound, value=sound) for sound in sounds if sound.lower().startswith(current.lower())
     ]
 
 
