@@ -1,4 +1,4 @@
 #!/bin/sh
 
-scp ./voicelines/new/* christoph@217.160.142.51:HeidiBot/voicelines/
-mv ./voicelines/new/* ./voicelines/
+ssh christoph@servenix.local.chriphost.de "rm -rf /home/christoph/heidi-sounds/*"
+scp -r ./heidi-sounds/* christoph@servenix.local.chriphost.de:/home/christoph/heidi-sounds/
