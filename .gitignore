@@ -12,3 +12,4 @@ Pipfile.lock
 /disabled_voicelines/
 *.svg
 .vscode
+Heidi_User.conf
