@@ -30,7 +30,7 @@ def enforce_channel(channel_id):
 
             # Do not call the decorated function if the channel_id doesn't match
             if not interaction.channel_id == channel_id:
-                await interaction.response.send_message("Heidi sagt: Geh in heidi_spam du dulli")
+                await interaction.response.send_message("Heidi sagt: Geh in heidi_spam du dulli", ephemeral=True)
                 return
 
             await function(*args, **kwargs)
@@ -59,12 +59,13 @@ async def play_voice_line(
         print(f"Error: Invalid soundfile {SOUNDDIR}/{board}/{sound}!")
         if interaction is not None:
             await interaction.response.send_message(
-                f'Heidi sagt: "{board}/{sound}" kanninich finden bruder'
+                f'Heidi sagt: "{board}/{sound}" kanninich finden bruder',
+                ephemeral=True
             )
         return
 
     if interaction is not None:
-        await interaction.response.send_message(f'Heidi sagt: "{board}/{sound}"')
+        await interaction.response.send_message(f'Heidi sagt: "{board}/{sound}"', ephemeral=True)
 
     audio_source = discord.FFmpegPCMAudio(
         f"{SOUNDDIR}/{board}/{sound}"
@@ -96,7 +97,7 @@ async def play_voice_line_for_member(
     ):
         print("User not in (valid) voice channel!")
         if interaction is not None:
-            await interaction.response.send_message("Heidi sagt: Komm in den Channel!")
+            await interaction.response.send_message("Heidi sagt: Komm in den Channel!", ephemeral=True)
         return
 
     voice_channel: VoiceChannel = member.voice.channel

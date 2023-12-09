@@ -121,7 +121,7 @@ def user_entrance_sound_autocomplete(
     boards: List[str] = os.listdir(SOUNDDIR)
     all_sounds: Dict[str, List[str]] = {
         board: os.listdir(f"{SOUNDDIR}/{board}/") for board in boards
-    }  # These are all sounds, organized per board, without file extension
+    }  # These are all sounds, organized per board
 
     # @todo Initially only suggest boards, because there are too many sounds to show them all
     completions: List[Choice[str]] = []
@@ -159,7 +159,7 @@ async def user_config(
     # Only Members can set settings
     if not isinstance(interaction.user, Member):
         print("User not a member")
-        await interaction.response.send_message("Heidi sagt: Komm in die Gruppe!")
+        await interaction.response.send_message("Heidi sagt: Komm in die Gruppe!", ephemeral=True)
         return
 
     member: Member = interaction.user
@@ -168,7 +168,8 @@ async def user_config(
     client.write_user_config()
 
     await interaction.response.send_message(
-        f"Ok, ich schreibe {member.name}={config_value} in mein fettes Gehirn!"
+        f"Ok, ich schreibe {member.name}={config_value} in mein fettes Gehirn!",
+        ephemeral=True
     )
 
 
@@ -294,12 +295,49 @@ async def say_voiceline(interaction: Interaction, board: str, sound: str) -> Non
     # Only Members can access voice channels
     if not isinstance(interaction.user, Member):
         print("User not a member")
-        await interaction.response.send_message("Heidi sagt: Komm in die Gruppe!")
+        await interaction.response.send_message("Heidi sagt: Komm in die Gruppe!", ephemeral=True)
         return
 
     member: Member = interaction.user
 
     await play_voice_line_for_member(interaction, member, board, sound)
+
+
+class InstantButton(discord.ui.Button):
+    def __init__(self, label: str, board: str, sound: str):
+        super().__init__(style=discord.ButtonStyle.red, label=label)
+
+        self.board = board
+        self.sound = sound
+
+    async def callback(self, interaction: Interaction):
+        """
+        Handle a press of the button.
+        """
+        if not isinstance(interaction.user, Member):
+            await interaction.response.send_message("Heidi mag keine discord.User, nur discord.Member!", ephemeral=True)
+            return
+
+        await play_voice_line_for_member(interaction, interaction.user, self.board, self.sound)
+
+
+class InstantButtons(discord.ui.View):
+    def __init__(self, board: str, timeout=None):
+        super().__init__(timeout=timeout)
+
+        sounds = os.listdir(f"{SOUNDDIR}/{board}")
+        for sound in sounds:
+            self.add_item(InstantButton(sound.split(".")[0], board, sound))
+
+
+@client.tree.command(
+    name="instantbuttons", description="Heidi malt Knöpfe für Sounds in den Chat."
+)
+@app_commands.describe(board="Welches Soundboard soll knöpfe bekommen?")
+@app_commands.autocomplete(board=board_autocomplete)
+@enforce_channel(HEIDI_SPAM_ID)
+async def soundboard_buttons(interaction: Interaction, board: str) -> None:
+    await interaction.response.send_message(f"Soundboard: {board.capitalize()}", view=InstantButtons(board))
 
 
 # Contextmenu ------------------------------------------------------------------------------------
@@ -318,7 +356,7 @@ async def insult(
 
     if not member.dm_channel:
         print("Error creating DMChannel!")
-        await interaction.response.send_message("Heidi sagt: Gib mal DM Nummer süße*r!")
+        await interaction.response.send_message("Heidi sagt: Gib mal DM Nummer süße*r!", ephemeral=True)
         return
 
     insults = [
@@ -339,7 +377,8 @@ async def insult(
 
     await member.dm_channel.send(random.choice(insults))
     await interaction.response.send_message(
-        "Anzeige ist raus!"
+        "Anzeige ist raus!",
+        ephemeral=True
     )  # with ephemeral = True only the caller can see the answer
 
 
