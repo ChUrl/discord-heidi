@@ -120,7 +120,7 @@ def user_entrance_sound_autocomplete(
     """
     boards: List[str] = os.listdir(SOUNDDIR)
     all_sounds: Dict[str, List[str]] = {
-        board: list(map(lambda x: x.split(".")[0], os.listdir(f"{SOUNDDIR}/{board}/")))
+        board: os.listdir(f"{SOUNDDIR}/{board}/")
         for board in boards
     }  # These are all sounds, organized per board, without file extension
 
@@ -133,7 +133,7 @@ def user_entrance_sound_autocomplete(
         for sound in board_sounds:  # Iterate over board specific sounds
             soundpath = f"{board}/{sound}"
             if soundpath.lower().startswith(current.lower()):
-                completions += [Choice(name=soundpath, value=soundpath)]
+                completions += [Choice(name=soundpath.split(".")[0], value=soundpath)]
 
     return completions
 
@@ -268,12 +268,10 @@ async def sound_autocomplete(
     Suggest a sound from an already selected board.
     """
     board: str = interaction.namespace.board
-    sounds: List[str] = list(
-        map(lambda x: x.split(".")[0], os.listdir(f"{SOUNDDIR}/{board}/"))
-    )
+    sounds: List[str] = os.listdir(f"{SOUNDDIR}/{board}/")
 
     return [
-        Choice(name=sound, value=sound)
+        Choice(name=sound.split(".")[0], value=sound)
         for sound in sounds
         if sound.lower().startswith(current.lower())
     ]

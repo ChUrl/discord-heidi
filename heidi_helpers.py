@@ -19,9 +19,9 @@ async def play_voice_line(
     Play a voice line in the specified channel.
     """
     try:
-        open(f"{SOUNDDIR}/{board}/{sound}.mkv")
+        open(f"{SOUNDDIR}/{board}/{sound}")
     except IOError:
-        print("Error: Invalid soundfile!")
+        print(f"Error: Invalid soundfile {SOUNDDIR}/{board}/{sound}!")
         if interaction is not None:
             await interaction.response.send_message(
                 f'Heidi sagt: "{board}/{sound}" kanninich finden bruder'
@@ -32,7 +32,7 @@ async def play_voice_line(
         await interaction.response.send_message(f'Heidi sagt: "{board}/{sound}"')
 
     audio_source = discord.FFmpegPCMAudio(
-        f"{SOUNDDIR}/{board}/{sound}.mkv"
+        f"{SOUNDDIR}/{board}/{sound}"
     )  # only works from docker
     voice_client = await voice_channel.connect()
     voice_client.play(audio_source)
