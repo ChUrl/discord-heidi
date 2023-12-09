@@ -5,7 +5,7 @@ from discord import app_commands
 from discord.app_commands import Choice
 from functools import reduce
 from dotenv import load_dotenv
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, Callable, Any
 
 # TODO: Reenable + extend textgen
 # from textgen import textgen
@@ -76,7 +76,7 @@ class HeidiClient(discord.Client):
         # if the predicate is true, the action is performed
         self.on_voice_state_triggers = {
             lambda m, b, a: b.channel != a.channel
-            and a.channel != None
+            and a.channel is not None
             and isinstance(a.channel, discord.VoiceChannel): self._play_entrance_sound,
         }
 
@@ -112,7 +112,7 @@ class HeidiClient(discord.Client):
         self.tree.copy_global_to(guild=TEST_GUILD)
         await self.tree.sync(guild=TEST_GUILD)
 
-    def update_to_default_user_config(self):
+    def update_to_default_user_config(self) -> None:
         """
         Adds config keys to the config, if they don't exist yet.
         """
@@ -125,7 +125,7 @@ class HeidiClient(discord.Client):
 
         self.write_user_config()
 
-    def print_user_config(self):
+    def print_user_config(self) -> None:
         print("Read persistent configuration:\n")
 
         for section in self.user_config.sections():
@@ -135,7 +135,7 @@ class HeidiClient(discord.Client):
 
         print("")
 
-    def write_user_config(self):
+    def write_user_config(self) -> None:
         if not os.path.exists(f"{CONFIGPATH}/{USERCONFIGNAME}"):
             print(f"Error: {CONFIGPATH}/{USERCONFIGNAME} doesn't exist!")
             return
@@ -179,14 +179,14 @@ class HeidiClient(discord.Client):
     #     await message.add_reaction("❤")
 
     @staticmethod
-    async def _autoreact_to_jeremy(message: discord.Message):
+    async def _autoreact_to_jeremy(message: discord.Message) -> None:
         """
         🧀 Jeremy
         """
         await message.add_reaction("🧀")
 
     @staticmethod
-    async def _autoreact_to_kardashian(message: discord.Message):
+    async def _autoreact_to_kardashian(message: discord.Message) -> None:
         """
         💄 Kardashian
         """
@@ -197,12 +197,12 @@ class HeidiClient(discord.Client):
         member: discord.Member,
         before: discord.VoiceState,
         after: discord.VoiceState,
-    ):
+    ) -> None:
         soundpath: Union[str, None] = self.user_config["ENTRANCE.SOUND"].get(
             member.name, None
         )
 
-        if soundpath == None:
+        if soundpath is None:
             print(f"User {member.name} has not set an entrance sound")
             return
 
@@ -233,15 +233,15 @@ client = HeidiClient(intents=intents)
 
 
 @client.event
-async def on_ready():
-    if client.user != None:
+async def on_ready() -> None:
+    if client.user is not None:
         print(f"{client.user} (id: {client.user.id}) has connected to Discord!")
     else:
         print("client.user is None!")
 
 
 @client.event
-async def on_message(message: discord.Message):
+async def on_message(message: discord.Message) -> None:
     # Skip Heidis own messages
     if message.author == client.user:
         return
@@ -258,7 +258,7 @@ async def on_message(message: discord.Message):
 @client.event
 async def on_voice_state_update(
     member: discord.Member, before: discord.VoiceState, after: discord.VoiceState
-):
+) -> None:
     # Skip Heidis own voice state updates (e.g. on /say)
     if member._user == client.user:
         return
@@ -267,7 +267,7 @@ async def on_voice_state_update(
     # python iterates over the keys of a map
     for predicate in client.on_voice_state_triggers:
         if predicate(member, before, after):
-            action = client.on_voice_state_triggers[predicate]
+            action: Callable = client.on_voice_state_triggers[predicate]
             print(f"on_voice_state_update: calling {action.__name__}")
             await action(member, before, after)
 
@@ -338,7 +338,7 @@ def user_entrance_sound_autocomplete(
 @app_commands.autocomplete(config_value=user_config_value_autocomplete)
 async def user_config(
     interaction: discord.Interaction, config_key: str, config_value: str
-):
+) -> None:
     # Only Members can set settings
     if not isinstance(interaction.user, discord.Member):
         print("User not a member")
@@ -362,7 +362,7 @@ async def user_config(
     name="giblinkbruder",
     description="Heidi hilft mit dem Link zu deiner Lieblingsshow im Qualitätsfernsehen.",
 )
-async def show_link(interaction: discord.Interaction):
+async def show_link(interaction: discord.Interaction) -> None:
     link_pro7 = "https://www.prosieben.de/tv/germanys-next-topmodel/livestream"
     link_joyn = "https://www.joyn.de/serien/germanys-next-topmodel"
 
@@ -372,7 +372,7 @@ async def show_link(interaction: discord.Interaction):
 
 
 @client.tree.command(name="heidi", description="Heidi!")
-async def heidi_exclaim(interaction: discord.Interaction):
+async def heidi_exclaim(interaction: discord.Interaction) -> None:
     messages = [
         "Die sind doch fast 18!",
         "Heidi!",
@@ -388,7 +388,7 @@ async def heidi_exclaim(interaction: discord.Interaction):
 @client.tree.command(name="miesmuschel", description="Was denkt Heidi?")
 @app_commands.rename(question="frage")
 @app_commands.describe(question="Heidi wird es beantworten!")
-async def magic_shell(interaction: discord.Interaction, question: str):
+async def magic_shell(interaction: discord.Interaction, question: str) -> None:
     choices = [
         "Ja!",
         "Jo.",
@@ -412,7 +412,7 @@ async def magic_shell(interaction: discord.Interaction, question: str):
 @app_commands.describe(option_a="Ist es vielleicht dies?")
 @app_commands.rename(option_b="oder")
 @app_commands.describe(option_b="Oder doch eher das?")
-async def choose(interaction: discord.Interaction, option_a: str, option_b: str):
+async def choose(interaction: discord.Interaction, option_a: str, option_b: str) -> None:
     options = [option_a.strip(), option_b.strip()]
     await interaction.response.send_message(
         f"{options[0]} oder {options[1]}?\nHeidi sagt: {random.choice(options)}"
@@ -488,7 +488,7 @@ async def sound_autocomplete(
 @app_commands.describe(sound="Was soll Heidi sagen?")
 @app_commands.autocomplete(board=board_autocomplete)
 @app_commands.autocomplete(sound=sound_autocomplete)
-async def say_voiceline(interaction: discord.Interaction, board: str, sound: str):
+async def say_voiceline(interaction: discord.Interaction, board: str, sound: str) -> None:
     # Only Members can access voice channels
     if not isinstance(interaction.user, discord.Member):
         print("User not a member")
@@ -507,7 +507,7 @@ async def say_voiceline(interaction: discord.Interaction, board: str, sound: str
 @client.tree.context_menu(name="beleidigen")
 async def insult(
     interaction: discord.Interaction, member: discord.Member
-):  # with message: discord.Message this can be called on a message
+) -> None:  # with message: discord.Message this can be called on a message
     if not member.dm_channel:
         await member.create_dm()
 
@@ -546,18 +546,18 @@ async def play_voice_line(
     voice_channel: discord.VoiceChannel,
     board: str,
     sound: str,
-):
+) -> None:
     try:
         open(f"{SOUNDDIR}/{board}/{sound}.mkv")
     except IOError:
         print("Error: Invalid soundfile!")
-        if interaction != None:
+        if interaction is not None:
             await interaction.response.send_message(
                 f'Heidi sagt: "{board}/{sound}" kanninich finden bruder'
             )
         return
 
-    if interaction != None:
+    if interaction is not None:
         await interaction.response.send_message(f'Heidi sagt: "{board}/{sound}"')
 
     audio_source = discord.FFmpegPCMAudio(
@@ -577,16 +577,16 @@ async def play_voice_line_for_member(
     member: discord.Member,
     board: str,
     sound: str,
-):
+) -> None:
     # Member needs to be in voice channel to hear audio (Heidi needs to know the channel to join)
     if (
-        member == None
-        or member.voice == None
-        or member.voice.channel == None
+        member is None
+        or member.voice is None
+        or member.voice.channel is None
         or not isinstance(member.voice.channel, discord.VoiceChannel)
     ):
         print("User not in (valid) voice channel!")
-        if interaction != None:
+        if interaction is not None:
             await interaction.response.send_message("Heidi sagt: Komm in den Channel!")
         return
 
