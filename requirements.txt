@@ -3,12 +3,3 @@ rich
 discord.py # maintained again
 pynacl # voice support
 python-dotenv # discord guild secrets
-
-# Webscraping
-# requests
-# beautifulsoup4
-
-# Textgeneration
-# torch
-# numpy
-# nltk
