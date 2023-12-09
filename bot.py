@@ -122,7 +122,7 @@ def user_entrance_sound_autocomplete(
     all_sounds: Dict[str, List[str]] = {
         board: list(map(lambda x: x.split(".")[0], os.listdir(f"{SOUNDDIR}/{board}/")))
         for board in boards
-    }  # These are all sounds, organized per board
+    }  # These are all sounds, organized per board, without file extension
 
     # @todo Initially only suggest boards, because there are too many sounds to show them all
     completions: List[Choice[str]] = []
@@ -188,6 +188,10 @@ async def heidi_exclaim(interaction: Interaction) -> None:
         "Warum denn so schüchtern?",
         "Im TV ist das legal!",
         "Das Stroh ist nur fürs Shooting!",
+        "Jetzt sei doch mal sexy!",
+        "Stell dich nicht so an!",
+        "Models müssen da halt durch!",
+        "Heul doch nicht!"
     ]
     await interaction.response.send_message(random.choice(messages))
 
@@ -208,14 +212,13 @@ async def magic_shell(interaction: Interaction, question: str) -> None:
         "Klaro Karo",
         "Offensichtlich Sherlock",
         "Tom sagt Ja",
-
         "Nein!",
         "Nö.",
         "Nä.",
         "Niemals!",
         "Nur über meine Leiche du Hurensohn!",
         "In deinen Träumen.",
-        "Tom sagt Nein"
+        "Tom sagt Nein",
     ]
     question = question.strip()
     question_mark = "" if question[-1] == "?" else "?"
