@@ -243,9 +243,6 @@ async def choose(interaction: Interaction, option_a: str, option_b: str) -> None
 # Sounds -----------------------------------------------------------------------------------------
 
 
-SOUNDDIR: str = "/sounds" if DOCKER else "./heidi-sounds"
-
-
 async def board_autocomplete(
     interaction: Interaction, current: str
 ) -> List[Choice[str]]:

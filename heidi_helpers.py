@@ -4,6 +4,9 @@ from typing import Union
 import discord
 from discord import Interaction, VoiceChannel, Member
 
+from heidi_constants import *
+
+print("Debug: Importing heidi_helpers.py")
 
 async def play_voice_line(
         interaction: Union[Interaction, None],
