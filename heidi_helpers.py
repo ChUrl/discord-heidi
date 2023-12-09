@@ -1,4 +1,5 @@
 import asyncio
+import functools
 from typing import Union
 
 import discord
@@ -7,6 +8,39 @@ from discord import Interaction, VoiceChannel, Member
 from heidi_constants import *
 
 print("Debug: Importing heidi_helpers.py")
+
+
+# Checks -----------------------------------------------------------------------------------------
+
+
+# 1. @enforce_channel(ID) is added to a function, which evaluates to decorate with the channel_id in its closure
+# 2. The function is passed to decorate(function),
+def enforce_channel(channel_id):
+    """
+    Only run a function if called from the correct channel.
+    """
+    def decorate(function):
+
+        @functools.wraps(function)
+        async def wrapped(*args, **kwargs):
+            """
+            Sends an interaction response if the interaction is not triggered from the heidi_spam channel.
+            """
+            interaction: Interaction = args[0]
+
+            # Do not call the decorated function if the channel_id doesn't match
+            if not interaction.channel_id == channel_id:
+                await interaction.response.send_message("Heidi sagt: Geh in heidi_spam du dulli")
+                return
+
+            await function(*args, **kwargs)
+
+        return wrapped
+
+    return decorate
+
+
+# Sounds -----------------------------------------------------------------------------------------
 
 
 # @todo Normalize volume when playing

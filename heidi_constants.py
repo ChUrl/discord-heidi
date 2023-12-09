@@ -24,3 +24,6 @@ SOUNDDIR: str = "/sounds" if DOCKER else "./heidi-sounds"
 # IDs of the servers Heidi is used on
 LINUS_GUILD = discord.Object(id=431154792308408340)
 TEST_GUILD = discord.Object(id=821511861178204161)
+
+# Channel IDs
+HEIDI_SPAM_ID = 822223476101742682

@@ -149,6 +149,7 @@ def user_entrance_sound_autocomplete(
     config_value="Der Wert, auf welche die Option gesetzt werden soll."
 )
 @app_commands.autocomplete(config_value=user_config_value_autocomplete)
+@enforce_channel(HEIDI_SPAM_ID)
 async def user_config(
     interaction: Interaction, config_key: str, config_value: str
 ) -> None:
@@ -175,6 +176,7 @@ async def user_config(
 
 
 @client.tree.command(name="heidi", description="Heidi!")
+@enforce_channel(HEIDI_SPAM_ID)
 async def heidi_exclaim(interaction: Interaction) -> None:
     """
     Print a random Heidi quote.
@@ -198,6 +200,7 @@ async def heidi_exclaim(interaction: Interaction) -> None:
 @client.tree.command(name="miesmuschel", description="Was denkt Heidi?")
 @app_commands.rename(question="frage")
 @app_commands.describe(question="Heidi wird es beantworten!")
+@enforce_channel(HEIDI_SPAM_ID)
 async def magic_shell(interaction: Interaction, question: str) -> None:
     """
     Answer a yes/no question.
@@ -232,6 +235,7 @@ async def magic_shell(interaction: Interaction, question: str) -> None:
 @app_commands.describe(option_a="Ist es vielleicht dies?")
 @app_commands.rename(option_b="oder")
 @app_commands.describe(option_b="Oder doch eher das?")
+@enforce_channel(HEIDI_SPAM_ID)
 async def choose(interaction: Interaction, option_a: str, option_b: str) -> None:
     """
     Select an answer from two options.
@@ -282,6 +286,7 @@ async def sound_autocomplete(
 @app_commands.describe(sound="Was soll Heidi sagen?")
 @app_commands.autocomplete(board=board_autocomplete)
 @app_commands.autocomplete(sound=sound_autocomplete)
+@enforce_channel(HEIDI_SPAM_ID)
 async def say_voiceline(interaction: Interaction, board: str, sound: str) -> None:
     """
     Play a voiceline in the calling member's current voice channel.
