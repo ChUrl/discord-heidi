@@ -178,7 +178,7 @@ class LSTMTextGenerator(textgen):
 
     # Interface shit
 
-    # TODO: Also save/load generated prefixes
+    # @todo Also save/load generated prefixes
     def load(self):
         print(f"Loading \"{self.filename}\" LSTM model with {len(self.charbase)} characters from file.")
 

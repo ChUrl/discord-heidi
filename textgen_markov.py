@@ -8,8 +8,8 @@ from rich.traceback import install
 install()
 
 # NOTE: This is word based, not character based
-# TODO: Serialize and save/load model (don't train on the server)
-# TODO: Maybe extract sentence beginnings and use them as starters?
+# @todo Serialize and save/load model (don't train on the server)
+# @todo Maybe extract sentence beginnings and use them as starters?
 
 class MarkovTextGenerator(textgen):
     # The greater the order (prefix length), the lesser the variation in generation, but the better the sentences (generally).

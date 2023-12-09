@@ -11,9 +11,9 @@ from heidi_client import *
 install(show_locals=True)
 
 
-# TODO: Only post in heidi-spam channel
-# TODO: yt-dlp music support
-# TODO: Somehow upload voicelines more easily (from discord voice message?)
+# @todo Only post in heidi-spam channel
+# @todo yt-dlp music support
+# @todo Somehow upload voicelines more easily (from discord voice message?)
 
 
 # Log to file
@@ -124,7 +124,7 @@ def user_entrance_sound_autocomplete(
         for board in boards
     }  # These are all sounds, organized per board
 
-    # TODO: Initially only suggest boards, because there are too many sounds to show them all
+    # @todo Initially only suggest boards, because there are too many sounds to show them all
     completions: List[Choice[str]] = []
     for (
         board,
@@ -224,7 +224,7 @@ async def magic_shell(interaction: Interaction, question: str) -> None:
     )
 
 
-# TODO: Allow , separated varargs, need to parse manually as slash commands don't support varargs
+# @todo Allow , separated varargs, need to parse manually as slash commands don't support varargs
 @client.tree.command(name="wähle", description="Heidi trifft die Wahl!")
 @app_commands.rename(option_a="entweder")
 @app_commands.describe(option_a="Ist es vielleicht dies?")
