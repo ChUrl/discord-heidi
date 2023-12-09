@@ -1,8 +1,10 @@
 # Example: https://github.com/Rapptz/discord.py/blob/master/examples/app_commands/basic.py
 
+from ast import Call
 import random, logging
+from discord import DMChannel
 from discord.app_commands import Choice
-from typing import Dict, List, Optional, Union, Callable, Any
+from typing import Awaitable, Dict, List, Optional, Union, Callable, Any
 from rich.traceback import install
 
 from heidi_client import *
@@ -11,9 +13,7 @@ from heidi_client import *
 install(show_locals=True)
 
 
-# @todo Only post in heidi-spam channel
 # @todo yt-dlp music support
-# @todo Somehow upload voicelines more easily (from discord voice message?)
 
 
 # Log to file
@@ -85,6 +85,59 @@ async def on_voice_state_update(
 # Config Commands --------------------------------------------------------------------------------
 
 
+class EntranceSoundSoundSelect(discord.ui.Select):
+    def __init__(self, board: str, on_sound_select_callback):
+        self.board = board
+        self.on_sound_select_callback = on_sound_select_callback
+
+        options: List[discord.SelectOption] = [
+            discord.SelectOption(label=sound.split(".")[0], value=sound)
+            for sound in os.listdir(f"{SOUNDDIR}/{board}")
+        ]
+
+        super().__init__(
+            placeholder="Select Sound", min_values=1, max_values=1, options=options
+        )
+
+    async def callback(self, interaction: Interaction):
+        await self.on_sound_select_callback(interaction, self.board, self.values[0])
+
+
+class EntranceSoundSoundView(discord.ui.View):
+    def __init__(self, board: str, on_sound_select_callback):
+        super().__init__(timeout=600)
+
+        self.add_item(EntranceSoundSoundSelect(board, on_sound_select_callback))
+
+
+class EntranceSoundBoardSelect(discord.ui.Select):
+    def __init__(self, on_sound_select_callback):
+        self.on_sound_select_callback = on_sound_select_callback
+
+        options: List[discord.SelectOption] = [
+            discord.SelectOption(label=board, value=board)
+            for board in os.listdir(f"{SOUNDDIR}")
+        ]
+
+        super().__init__(
+            placeholder="Select Board", min_values=1, max_values=1, options=options
+        )
+
+    async def callback(self, interaction: Interaction):
+        await interaction.response.send_message(
+            f"Welchen sound willst du?",
+            view=EntranceSoundSoundView(self.values[0], self.on_sound_select_callback),
+            ephemeral=True,
+        )
+
+
+class EntranceSoundBoardView(discord.ui.View):
+    def __init__(self, on_sound_select_callback):
+        super().__init__(timeout=600)
+
+        self.add_item(EntranceSoundBoardSelect(on_sound_select_callback))
+
+
 async def user_config_key_autocomplete(
     interaction: Interaction, current: str
 ) -> List[Choice[str]]:
@@ -98,45 +151,6 @@ async def user_config_key_autocomplete(
     ]
 
 
-async def user_config_value_autocomplete(
-    interaction: Interaction, current: str
-) -> List[Choice[str]]:
-    """
-    Calls an autocomplete function depending on the entered config_key.
-    """
-    autocompleters = {"ENTRANCE.SOUND": user_entrance_sound_autocomplete}
-    autocompleter = autocompleters[interaction.namespace.option]
-
-    print(f"config_value_autocomplete: calling {autocompleter.__name__}")
-
-    return autocompleter(interaction, current)
-
-
-def user_entrance_sound_autocomplete(
-    interaction: Interaction, current: str
-) -> List[Choice[str]]:
-    """
-    Generates autocomplete options for the ENTRANCE.SOUND config key.
-    """
-    boards: List[str] = os.listdir(SOUNDDIR)
-    all_sounds: Dict[str, List[str]] = {
-        board: os.listdir(f"{SOUNDDIR}/{board}/") for board in boards
-    }  # These are all sounds, organized per board
-
-    # @todo Initially only suggest boards, because there are too many sounds to show them all
-    completions: List[Choice[str]] = []
-    for (
-        board,
-        board_sounds,
-    ) in all_sounds.items():  # Iterate over all sounds, organized per board
-        for sound in board_sounds:  # Iterate over board specific sounds
-            soundpath = f"{board}/{sound}"
-            if soundpath.lower().startswith(current.lower()):
-                completions += [Choice(name=soundpath.split(".")[0], value=soundpath)]
-
-    return completions
-
-
 @client.tree.command(
     name="userconfig",
     description="User-spezifische Heidi-Einstellungen (Heidi merkt sie sich in ihrem riesigen Gehirn).",
@@ -144,32 +158,42 @@ def user_entrance_sound_autocomplete(
 @app_commands.rename(config_key="option")
 @app_commands.describe(config_key="Die Option, welche du ändern willst.")
 @app_commands.autocomplete(config_key=user_config_key_autocomplete)
-@app_commands.rename(config_value="wert")
-@app_commands.describe(
-    config_value="Der Wert, auf welche die Option gesetzt werden soll."
-)
-@app_commands.autocomplete(config_value=user_config_value_autocomplete)
 @enforce_channel(HEIDI_SPAM_ID)
-async def user_config(
-    interaction: Interaction, config_key: str, config_value: str
-) -> None:
+async def user_config(interaction: Interaction, config_key: str) -> None:
     """
     Set a user config value for the calling user.
     """
     # Only Members can set settings
     if not isinstance(interaction.user, Member):
         print("User not a member")
-        await interaction.response.send_message("Heidi sagt: Komm in die Gruppe!", ephemeral=True)
+        await interaction.response.send_message(
+            "Heidi sagt: Komm in die Gruppe!", ephemeral=True
+        )
         return
 
     member: Member = interaction.user
 
-    client.user_config[config_key][member.name] = config_value
-    client.write_user_config()
+    async def on_sound_select_callback(interaction, board: str, sound: str):
+        """
+        This function is called, when an EntrySoundSoundSelect option is selected.
+        """
+        client.user_config[config_key][member.name] = f"{board}/{sound}"
+        client.write_user_config()
+
+        await interaction.response.send_message(
+            f"Ok, ich schreibe {member.name}={board}/{sound} in mein fettes Gehirn!",
+            ephemeral=True,
+        )
+
+    # Views for different user config options are defined here
+    views = {"ENTRANCE.SOUND": (EntranceSoundBoardView, on_sound_select_callback)}
+
+    view, select_callback = views[config_key]
 
     await interaction.response.send_message(
-        f"Ok, ich schreibe {member.name}={config_value} in mein fettes Gehirn!",
-        ephemeral=True
+        f"Aus welchem Soundboard soll dein sound sein?",
+        view=view(select_callback),
+        ephemeral=True,
     )
 
 
@@ -295,7 +319,9 @@ async def say_voiceline(interaction: Interaction, board: str, sound: str) -> Non
     # Only Members can access voice channels
     if not isinstance(interaction.user, Member):
         print("User not a member")
-        await interaction.response.send_message("Heidi sagt: Komm in die Gruppe!", ephemeral=True)
+        await interaction.response.send_message(
+            "Heidi sagt: Komm in die Gruppe!", ephemeral=True
+        )
         return
 
     member: Member = interaction.user
@@ -315,13 +341,17 @@ class InstantButton(discord.ui.Button):
         Handle a press of the button.
         """
         if not isinstance(interaction.user, Member):
-            await interaction.response.send_message("Heidi mag keine discord.User, nur discord.Member!", ephemeral=True)
+            await interaction.response.send_message(
+                "Heidi mag keine discord.User, nur discord.Member!", ephemeral=True
+            )
             return
 
-        await play_voice_line_for_member(interaction, interaction.user, self.board, self.sound)
+        await play_voice_line_for_member(
+            interaction, interaction.user, self.board, self.sound
+        )
 
 
-class InstantButtons(discord.ui.View):
+class InstantButtonsView(discord.ui.View):
     def __init__(self, board: str, timeout=None):
         super().__init__(timeout=timeout)
 
@@ -337,7 +367,9 @@ class InstantButtons(discord.ui.View):
 @app_commands.autocomplete(board=board_autocomplete)
 @enforce_channel(HEIDI_SPAM_ID)
 async def soundboard_buttons(interaction: Interaction, board: str) -> None:
-    await interaction.response.send_message(f"Soundboard: {board.capitalize()}", view=InstantButtons(board))
+    await interaction.response.send_message(
+        f"Soundboard: {board.capitalize()}", view=InstantButtonsView(board)
+    )
 
 
 # Contextmenu ------------------------------------------------------------------------------------
@@ -356,7 +388,9 @@ async def insult(
 
     if not member.dm_channel:
         print("Error creating DMChannel!")
-        await interaction.response.send_message("Heidi sagt: Gib mal DM Nummer süße*r!", ephemeral=True)
+        await interaction.response.send_message(
+            "Heidi sagt: Gib mal DM Nummer süße*r!", ephemeral=True
+        )
         return
 
     insults = [
@@ -377,8 +411,7 @@ async def insult(
 
     await member.dm_channel.send(random.choice(insults))
     await interaction.response.send_message(
-        "Anzeige ist raus!",
-        ephemeral=True
+        "Anzeige ist raus!", ephemeral=True
     )  # with ephemeral = True only the caller can see the answer
 
 
