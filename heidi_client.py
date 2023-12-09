@@ -28,7 +28,7 @@ class HeidiClient(discord.Client):
             # lambda m: m.author.nick.lower() in self.models.get_in_names(): self.autoreact_to_girls,
             lambda m: "jeremy" in m.author.nick.lower(): self._autoreact_to_jeremy,
             lambda m: "kardashian" in m.author.nick.lower()
-                      or "jenner" in m.author.nick.lower(): self._autoreact_to_kardashian,
+            or "jenner" in m.author.nick.lower(): self._autoreact_to_kardashian,
         }
 
         # automatic actions on voice state changes
@@ -109,15 +109,26 @@ class HeidiClient(discord.Client):
         await message.add_reaction("💄")
 
     async def _play_entrance_sound(
-            self,
-            member: Member,
-            before: VoiceState,
-            after: VoiceState,
+        self,
+        member: Member,
+        before: VoiceState,
+        after: VoiceState,
     ) -> None:
         """
-        Play a sound when a member joins a voice channel.
+        Play a sound when a member joins a voice channel (and another member is present).
         This function is set in on_voice_state_triggers and triggered by the on_voice_state_update event.
         """
+
+        # Don't play anything when no other users are present
+        if (
+            member is not None
+            and member.voice is not None
+            and member.voice.channel is not None
+            and len(member.voice.channel.members) <= 1
+        ):
+            print("Not playing entrance sound, as no other members are present")
+            return
+
         soundpath: Union[str, None] = self.user_config["ENTRANCE.SOUND"].get(
             member.name, None
         )

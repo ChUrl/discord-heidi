@@ -8,12 +8,13 @@ from heidi_constants import *
 
 print("Debug: Importing heidi_helpers.py")
 
+
 # @todo Normalize volume when playing
 async def play_voice_line(
-        interaction: Union[Interaction, None],
-        voice_channel: VoiceChannel,
-        board: str,
-        sound: str,
+    interaction: Union[Interaction, None],
+    voice_channel: VoiceChannel,
+    board: str,
+    sound: str,
 ) -> None:
     """
     Play a voice line in the specified channel.
@@ -44,20 +45,20 @@ async def play_voice_line(
 
 
 async def play_voice_line_for_member(
-        interaction: Union[Interaction, None],
-        member: Member,
-        board: str,
-        sound: str,
+    interaction: Union[Interaction, None],
+    member: Member,
+    board: str,
+    sound: str,
 ) -> None:
     """
     Play a voice line in the member's current channel.
     """
     # Member needs to be in voice channel to hear audio (Heidi needs to know the channel to join)
     if (
-            member is None
-            or member.voice is None
-            or member.voice.channel is None
-            or not isinstance(member.voice.channel, VoiceChannel)
+        member is None
+        or member.voice is None
+        or member.voice.channel is None
+        or not isinstance(member.voice.channel, VoiceChannel)
     ):
         print("User not in (valid) voice channel!")
         if interaction is not None:

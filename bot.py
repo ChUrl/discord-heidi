@@ -120,8 +120,7 @@ def user_entrance_sound_autocomplete(
     """
     boards: List[str] = os.listdir(SOUNDDIR)
     all_sounds: Dict[str, List[str]] = {
-        board: os.listdir(f"{SOUNDDIR}/{board}/")
-        for board in boards
+        board: os.listdir(f"{SOUNDDIR}/{board}/") for board in boards
     }  # These are all sounds, organized per board, without file extension
 
     # @todo Initially only suggest boards, because there are too many sounds to show them all
@@ -191,7 +190,7 @@ async def heidi_exclaim(interaction: Interaction) -> None:
         "Jetzt sei doch mal sexy!",
         "Stell dich nicht so an!",
         "Models müssen da halt durch!",
-        "Heul doch nicht!"
+        "Heul doch nicht!",
     ]
     await interaction.response.send_message(random.choice(messages))
 
